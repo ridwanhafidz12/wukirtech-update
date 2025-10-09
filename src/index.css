@@ -1,0 +1,177 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Keeping a light theme for potential future use, but dark is default */
+    --background-light: 130 40% 96%;
+    --foreground-light: 140 25% 10%;
+    /* ... other light theme vars if needed ... */
+
+    /* Default to dark theme */
+    --background: 140 30% 8%; /* Elegant Dark Green */
+    --foreground: 40 30% 95%; /* Creamy White */
+    --card: 140 25% 11%;
+    --card-foreground: 40 30% 95%;
+    --popover: 140 30% 7%;
+    --popover-foreground: 40 30% 95%;
+    --primary: 80 85% 60%; /* Vibrant Lime Green */
+    --primary-foreground: 80 50% 10%;
+    --secondary: 140 20% 15%;
+    --secondary-foreground: 40 30% 95%;
+    --muted: 140 20% 15%;
+    --muted-foreground: 140 5% 60%;
+    --accent: 140 20% 15%;
+    --accent-foreground: 40 30% 95%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 85.7% 97.3%;
+    --border: 140 20% 18%;
+    --input: 140 20% 18%;
+    --ring: 80 85% 65%;
+    --radius: 0.75rem;
+  }
+ 
+  /* This dark class is here for semantic consistency, but root vars already define the dark theme */
+  .dark {
+    --background: 140 30% 8%;
+    --foreground: 40 30% 95%;
+    --card: 140 25% 11%;
+    --card-foreground: 40 30% 95%;
+    --popover: 140 30% 7%;
+    --popover-foreground: 40 30% 95%;
+    --primary: 80 85% 60%;
+    --primary-foreground: 80 50% 10%;
+    --secondary: 140 20% 15%;
+    --secondary-foreground: 40 30% 95%;
+    --muted: 140 20% 15%;
+    --muted-foreground: 140 5% 60%;
+    --accent: 140 20% 15%;
+    --accent-foreground: 40 30% 95%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 85.7% 97.3%;
+    --border: 140 20% 18%;
+    --input: 140 20% 18%;
+    --ring: 80 85% 65%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: 'Inter', sans-serif;
+  }
+  .leaflet-container {
+    @apply rounded-2xl border border-border/20;
+  }
+  .leaflet-popup-content-wrapper {
+    @apply bg-card/80 backdrop-blur-md text-card-foreground border-none shadow-lg rounded-lg;
+  }
+  .leaflet-popup-content {
+    @apply text-sm font-medium m-0;
+  }
+  .leaflet-popup-tip {
+     @apply bg-card/80 backdrop-blur-md;
+  }
+  .leaflet-control-zoom-in, .leaflet-control-zoom-out {
+    @apply bg-card text-card-foreground hover:bg-primary hover:text-primary-foreground;
+  }
+  .map-marker {
+    @apply relative flex justify-center items-center transition-transform duration-300;
+  }
+  .map-marker:hover {
+    transform: scale(1.1);
+  }
+  .map-marker-pulse {
+    @apply absolute w-full h-full rounded-full bg-primary;
+    animation: pulse 2s infinite;
+  }
+  .map-marker-dot {
+    @apply relative w-4 h-4 rounded-full bg-primary border-2 border-background shadow-md;
+  }
+
+  .products-bg {
+    background-color: hsl(var(--background));
+     background-image:
+      radial-gradient(hsl(var(--primary) / 0.05) 1px, transparent 1px),
+      radial-gradient(hsl(var(--primary) / 0.05) 1px, hsl(var(--background)) 1px);
+    background-size: 40px 40px;
+    background-position: 0 0, 20px 20px;
+  }
+
+  .recharts-tooltip-cursor {
+    @apply stroke-primary/30;
+  }
+  .recharts-tooltip-wrapper {
+    @apply !bg-card/80 !backdrop-blur-sm !border-border/50 !rounded-lg;
+  }
+  .recharts-tooltip-label {
+    @apply !text-foreground !font-bold;
+  }
+  .recharts-legend-item-text {
+    @apply !text-muted-foreground;
+  }
+  .recharts-cartesian-axis-tick-value {
+    @apply !fill-muted-foreground;
+  }
+
+
+  @keyframes pulse {
+    0% {
+      transform: scale(0.95);
+      opacity: 0.7;
+    }
+    70% {
+      transform: scale(1.8);
+      opacity: 0;
+    }
+    100% {
+      transform: scale(0.95);
+      opacity: 0;
+    }
+  }
+
+  @keyframes fall {
+    0% {
+      transform: translateY(-10vh) translateX(var(--x-start));
+      opacity: 0;
+    }
+    10% {
+      opacity: 1;
+    }
+    90% {
+      opacity: 1;
+    }
+    100% {
+      transform: translateY(110vh) translateX(var(--x-end));
+      opacity: 0;
+    }
+  }
+
+  .particle {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 2px;
+    height: 2px;
+    background-color: hsl(var(--primary) / 0.7);
+    border-radius: 50%;
+    animation-name: fall;
+    animation-timing-function: linear;
+    animation-iteration-count: infinite;
+    will-change: transform;
+    box-shadow: 0 0 8px hsl(var(--primary) / 0.8);
+  }
+  
+  .ai-planner-bg {
+    background-color: #0c1412;
+    background-image:
+        radial-gradient(ellipse 50% 50% at 50% 50%, rgba(132, 255, 0, 0.1), transparent),
+        url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%239C92AC' fill-opacity='0.04'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+    position: relative;
+    overflow: hidden;
+  }
+}
