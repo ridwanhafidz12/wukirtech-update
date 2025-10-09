@@ -4,13 +4,11 @@ import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import { Sun, Thermometer, Users, ShoppingBag } from 'lucide-react';
 
 const initialVisitorData = [
-  { name: 'Sen', pengunjung: 30 },
-  { name: 'Sel', pengunjung: 45 },
-  { name: 'Rab', pengunjung: 60 },
-  { name: 'Kam', pengunjung: 55 },
-  { name: 'Jum', pengunjung: 75 },
-  { name: 'Sab', pengunjung: 110 },
-  { name: 'Min', pengunjung: 130 },
+  { name: '2020', pengunjung: 524.57 },
+  { name: '2021', pengunjung: 613.3 },
+  { name: '2022', pengunjung: 734.86 },
+  { name: '2023', pengunjung: 839.67 },
+  { name: '2024', pengunjung: 1021.08 },
 ];
 
 const umkmData = [
@@ -48,25 +46,26 @@ const WeatherWidget = () => {
 const VisitorChart = () => {
   const [data, setData] = useState(initialVisitorData);
 
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setData(currentData => {
-        const newData = [...currentData];
-        const lastDataPoint = newData[newData.length - 1];
-        const newVisitorCount = Math.max(20, lastDataPoint.pengunjung + Math.floor(Math.random() * 21) - 10);
+  // Hapus interval update data karena ini data tahunan statis
+  // useEffect(() => {
+  //   const interval = setInterval(() => {
+  //     setData(currentData => {
+  //       const newData = [...currentData];
+  //       const lastDataPoint = newData[newData.length - 1];
+  //       const newVisitorCount = Math.max(20, lastDataPoint.pengunjung + Math.floor(Math.random() * 21) - 10);
         
-        const nextDay = {
-            ...lastDataPoint,
-            pengunjung: newVisitorCount
-        };
+  //       const nextDay = {
+  //           ...lastDataPoint,
+  //           pengunjung: newVisitorCount
+  //       };
 
-        const shiftedData = newData.slice(1);
-        return [...shiftedData, nextDay];
-      });
-    }, 3000);
+  //       const shiftedData = newData.slice(1);
+  //       return [...shiftedData, nextDay];
+  //     });
+  //   }, 3000);
 
-    return () => clearInterval(interval);
-  }, []);
+  //   return () => clearInterval(interval);
+  // }, []);
 
   return (
     <motion.div 
@@ -78,9 +77,9 @@ const VisitorChart = () => {
     >
       <h3 className="text-lg font-bold text-foreground mb-1 flex items-center">
         <Users className="w-5 h-5 mr-2 text-primary" />
-        Kunjungan Wisatawan Harian
+        Kunjungan Wisatawan Tahunan
       </h3>
-      <p className="text-sm text-muted-foreground mb-6">Data live simulasi 7 hari terakhir</p>
+      <p className="text-sm text-muted-foreground mb-6">Data kunjungan wisatawan domestik dari tahun 2020-2024</p>
       <div className="h-64">
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart data={data} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
@@ -92,7 +91,7 @@ const VisitorChart = () => {
             </defs>
             <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border) / 0.5)" />
             <XAxis dataKey="name" />
-            <YAxis domain={['dataMin - 10', 'dataMax + 10']} />
+            <YAxis domain={[0, 'dataMax + 100']} />
             <Tooltip 
               contentStyle={{ 
                 backgroundColor: 'hsla(var(--card), 0.8)',
@@ -102,6 +101,7 @@ const VisitorChart = () => {
                 color: 'hsl(var(--foreground))'
               }}
               labelStyle={{ color: 'hsl(var(--primary))' }}
+              formatter={(value) => [`${value} ribu`, 'Pengunjung']}
             />
             <Area type="monotone" dataKey="pengunjung" stroke="hsl(var(--primary))" fillOpacity={1} fill="url(#colorVisitor)" strokeWidth={2} />
           </AreaChart>
