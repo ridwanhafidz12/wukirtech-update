@@ -103,7 +103,7 @@ const tourPackages = [
   {
     id: 1,
     name: "Paket Wisata Budaya Lengkap",
-    duration: "1 Hari",
+    // duration: "1 Hari",
     price: "Rp 350.000",
     description: "Pengalaman lengkap seni dan budaya Wukirsari",
     highlights: [
@@ -126,7 +126,7 @@ const tourPackages = [
   {
     id: 2,
     name: "Paket Eksplorasi Alam",
-    duration: "1 Hari",
+    // duration: "1 Hari",
     price: "Rp 250.000",
     description: "Petualangan menyenangkan menikmati keindahan alam Wukirsari",
     highlights: [
@@ -149,7 +149,7 @@ const tourPackages = [
   {
     id: 3,
     name: "Paket Wisata Kuliner & Belanja",
-    duration: "6 Jam",
+    // duration: "6 Jam",
     price: "Rp 180.000",
     description: "Jelajahi kuliner khas dan produk UMKM unggulan",
     highlights: [
@@ -172,7 +172,7 @@ const tourPackages = [
   {
     id: 4,
     name: "Paket Premium 2 Hari 1 Malam",
-    duration: "2 Hari 1 Malam",
+    // duration: "2 Hari 1 Malam",
     price: "Rp 850.000",
     description: "Pengalaman komprehensif semua aspek wisata Wukirsari",
     highlights: [
@@ -647,7 +647,7 @@ const AiPlannerSection = () => {
                           dan produk UMKM terbaik yang disesuaikan dengan preferensi Anda.
                         </p> */}
                         
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mt-6">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                           {tourPackages.slice(0, 3).map((pkg) => (
                             <div key={pkg.id} className="bg-secondary/30 border border-border/20 rounded-lg p-3 text-center">
                               <h4 className="font-semibold text-foreground text-sm mb-1">{pkg.name}</h4>
@@ -667,7 +667,7 @@ const AiPlannerSection = () => {
 
             {/* Input Form - Fixed at Bottom */}
             <motion.div 
-              className="flex-shrink-0 pt-4 mt-4 border-t border-border/20"
+              className="flex-shrink-0 pt-4 border-t border-border/20"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3 }}
