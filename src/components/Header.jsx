@@ -27,7 +27,7 @@ const Header = () => {
           <a href="#ai-planner" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">AI Planner</a>
           <a href="#tentang" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">Tentang Kami</a>
         </nav>
-        <Button onClick={handleActionClick} className="hidden md:flex">Mulai Jelajah</Button>
+        {/* <Button onClick={handleActionClick} className="hidden md:flex">Mulai Jelajah</Button> */}
       </div>
     </header>
   );

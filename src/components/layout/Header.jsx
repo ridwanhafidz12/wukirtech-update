@@ -90,7 +90,7 @@ const Header = () => {
                 <NavLinks />
               </nav>
                <div className="py-8">
-                 <Button onClick={handleActionClick} variant="outline" className="w-full">Mulai Jelajah</Button>
+                 {/* <Button onClick={handleActionClick} variant="outline" className="w-full">Mulai Jelajah</Button> */}
               </div>
             </div>
           </motion.div>

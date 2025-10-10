@@ -160,7 +160,7 @@ const PaymentModal = ({ product, onWhatsAppOrder }) => {
         <TabsContent value="qris" className="mt-4 p-4 bg-secondary/50 rounded-lg text-center">
           <p className="text-sm text-muted-foreground mb-4">Pindai kode QR di bawah ini menggunakan aplikasi pembayaran favorit Anda.</p>
           <div className="flex justify-center">
-            <img  class="w-48 h-48 bg-gray-300 rounded-md" alt="Contoh kode QRIS untuk pembayaran" src="qris.jpg" />
+            <img  class="w-48 h-48 bg-gray-300 rounded-md" alt="Contoh kode QRIS untuk pembayaran" src="gqris.jpg" />
           </div>
           <p className="text-xs text-muted-foreground mt-2">Total: {product.price}</p>
         </TabsContent>
