@@ -12,8 +12,15 @@ const HomePage = () => {
   return (
     <>
       <Helmet>
-        <title>WukirTech - Jelajahi Keajaiban Desa Wisata Wukirsari</title>
+        <title>WukirTech - Jelajahi Desa Wisata Wukirsari</title>
         <meta name="description" content="WukirTech adalah platform digital pariwisata terpadu untuk Desa Wisata Wukirsari. Temukan destinasi, produk UMKM, dan pengalaman budaya otentik." />
+        
+        {/* Favicon */}
+        <link rel="icon" type="image/png" href="/WUKIRTECH.png" />
+        <link rel="apple-touch-icon" href="/WUKIRTECH.png" />
+        <link rel="shortcut icon" href="/WUKIRTECH.png" type="image/png" />
+        
+        {/* Preconnect untuk optimasi performa */}
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="true" />
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet" />
@@ -23,7 +30,7 @@ const HomePage = () => {
       <DashboardSection />
       <InteractiveMapSection />
       <AiPlannerSection />
-      <ProductsSection />
+      <ProductsSection /> 
       <AboutSection />
     </>
   );

@@ -12,8 +12,8 @@ const initialVisitorData = [
 ];
 
 const umkmData = [
-    { name: 'Kerajinan', value: 45, color: 'hsl(var(--primary))' },
-    { name: 'Kuliner', value: 35, color: 'hsl(80, 70%, 50%)' },
+    { name: 'Kerajinan', value: 40, color: 'hsl(var(--primary))' },
+    { name: 'Kuliner', value: 33, color: 'hsl(80, 70%, 50%)' },
     { name: 'Jasa & Akomodasi', value: 15, color: 'hsl(140, 50%, 60%)' },
     { name: 'Agrowisata', value: 12, color: 'hsl(40, 60%, 60%)' },
 ];
