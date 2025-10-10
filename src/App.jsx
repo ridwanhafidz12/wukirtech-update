@@ -4,6 +4,7 @@ import Layout from '@/components/layout/Layout';
 import HomePage from '@/pages/HomePage';
 import AgendaPage from '@/pages/AgendaPage';
 import GaleriPage from '@/pages/GaleriPage';
+import PlannerPage from '@/pages/PlannerPage';
 import ProdukPage from '@/pages/ProdukPage';
 import { Toaster } from '@/components/ui/toaster';
 
@@ -15,6 +16,7 @@ function App() {
           <Route index element={<HomePage />} />
           <Route path="agenda" element={<AgendaPage />} />
           <Route path="galeri" element={<GaleriPage />} />
+          <Route path="planner" element={<PlannerPage />} />
           <Route path="produk" element={<ProdukPage />} />
         </Route>
       </Routes>

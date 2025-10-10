@@ -19,6 +19,10 @@ const Hero = () => {
     document.getElementById('destinasi')?.scrollIntoView({ behavior: 'smooth' });
   };
 
+  const scrollToProducts = () => {
+    document.getElementById('produk')?.scrollIntoView({ behavior: 'smooth' });
+  };
+
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: {
@@ -74,7 +78,7 @@ const Hero = () => {
             <Button onClick={scrollToMap} size="lg" className="text-lg py-7 px-8 font-bold">
               Mulai Petualangan <ArrowRight className="w-5 h-5 ml-2" />
             </Button>
-            <Button onClick={handleActionClick} size="lg" variant="outline" className="text-lg py-7 px-8 font-bold">
+            <Button onClick={scrollToProducts} size="lg" variant="outline" className="text-lg py-7 px-8 font-bold">
               Produk Lokal
             </Button>
           </motion.div>
@@ -86,9 +90,9 @@ const Hero = () => {
          animate={{ opacity: 1 }}
          transition={{ delay: 1.5, duration: 1 }}
        >
-         <Mouse className="w-6 h-6 text-muted-foreground" />
+         {/* <Mouse className="w-6 h-6 text-muted-foreground" />
          <span className="text-xs text-muted-foreground">Scroll untuk menjelajah</span>
-         <div className="w-px h-8 bg-muted-foreground/30 mt-1"></div>
+         <div className="w-px h-8 bg-muted-foreground/30 mt-1"></div> */}
        </motion.div>
     </section>
   );

@@ -37,9 +37,9 @@ const Header = () => {
     <>
       <NavLink to="/" className={navLinkClasses} end>Beranda</NavLink>
       <NavLink to="/agenda" className={navLinkClasses}>Agenda</NavLink>
-      {/* <NavLink to="/galeri" className={navLinkClasses}>Galeri</NavLink> */}
-      <a href="#produk" onClick={(e) => { e.preventDefault(); document.getElementById('produk')?.scrollIntoView({ behavior: 'smooth' }); }} className="text-sm font-semibold tracking-wide uppercase text-muted-foreground hover:text-primary transition-colors duration-300">Produk</a>
-      <a href="#ai-planner" onClick={(e) => { e.preventDefault(); document.getElementById('ai-planner')?.scrollIntoView({ behavior: 'smooth' }); }} className="text-sm font-semibold tracking-wide uppercase text-muted-foreground hover:text-primary transition-colors duration-300">AI Planner</a>
+      <NavLink to="/produk" className={navLinkClasses}>Produk</NavLink>
+      <NavLink to="/planner" className={navLinkClasses}>AI Planner</NavLink>
+      
     </>
   );
 
