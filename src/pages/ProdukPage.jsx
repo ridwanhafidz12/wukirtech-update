@@ -44,7 +44,7 @@ const products = [
     umkm: "Ituk Wayang",
     price: "Rp600.000",
     imageAlt: "Wayang kulit dari Pucung",
-    imageUrl: "public/wayang.jpeg",
+    imageUrl: "wayang.jpeg",
     isNew: true,
   },
   {
@@ -80,7 +80,7 @@ const products = [
     umkm: "Paguyuban Batik Giriloyo",
     price: "Rp900.000 - Rp. 1.500.000",
     imageAlt: "Kain dan tas batik bermotif cantik tersusun rapi di rak kayu",
-    imageUrl: "public/batik-1.jpg",
+    imageUrl: "batik-1.jpg",
     isNew: true,
   },
   {
@@ -89,7 +89,7 @@ const products = [
     umkm: "Paguyuban Batik Giriloyo",
     price: "Rp900.000 - Rp. 2.0000.000",
     imageAlt: "Kain dan tas batik bermotif cantik tersusun rapi di rak kayu",
-    imageUrl: "public/batik.jpg",
+    imageUrl: "batik.jpg",
     isNew: true,
   },
   {
@@ -98,7 +98,7 @@ const products = [
     umkm: "Wedang Uwuh HJ. Jazimah",
     price: "Rp20.000 / pcs",
     imageAlt: "Kain dan tas batik bermotif cantik tersusun rapi di rak kayu",
-    imageUrl: "public/uwuh.jpg",
+    imageUrl: "uwuh.jpg",
     isNew: true,
   },
   {
@@ -107,7 +107,7 @@ const products = [
     umkm: "Shalsabila Batik",
     price: "Rp900.000 - 1.500.000",
     imageAlt: "Kain dan tas batik bermotif cantik tersusun rapi di rak kayu",
-    imageUrl: "public/batik-2.png",
+    imageUrl: "batik-2.png",
     isNew: true,
   },
 ];
