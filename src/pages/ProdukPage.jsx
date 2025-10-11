@@ -147,9 +147,13 @@ const PaymentModal = ({ product, onWhatsAppOrder }) => {
         </DialogDescription>
       </DialogHeader>
       <Tabs defaultValue="whatsapp" className="w-full mt-4">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="whatsapp"><MessageCircle className="w-4 h-4 mr-2" />WhatsApp</TabsTrigger>
-          <TabsTrigger value="qris"><QrCode className="w-4 h-4 mr-2" />QRIS</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="whatsapp" className="flex items-center justify-center">
+            <MessageCircle className="w-4 h-4 mr-2" />WhatsApp
+          </TabsTrigger>
+          <TabsTrigger value="qris" className="flex items-center justify-center">
+            <QrCode className="w-4 h-4 mr-2" />QRIS
+          </TabsTrigger>
         </TabsList>
         <TabsContent value="whatsapp" className="mt-4 p-4 bg-secondary/50 rounded-lg">
           <p className="text-sm text-muted-foreground mb-4">Klik tombol di bawah untuk mengirim pesan pesanan Anda langsung ke penjual.</p>

@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Helmet } from 'react-helmet';
+import { motion } from 'framer-motion';
+import { ShoppingBag, ShoppingCart, MessageCircle, QrCode } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useToast } from '@/components/ui/use-toast';
-import { ArrowRight, ShoppingCart, MessageCircle, QrCode, Banknote } from 'lucide-react';
 import MotionCard from '@/components/common/MotionCard';
 import {
   Dialog,
@@ -113,13 +113,13 @@ const products = [
 ];
 
 const ProductCard = ({ product, onOrder }) => (
-  <MotionCard whileHover={{ scale: 1.03, transition: { duration: 0.2 } }} className="group">
+  <MotionCard whileHover={{ scale: 1.03, transition: { duration: 0.2 } }} className="group h-full">
     <div className="relative">
       <div className="aspect-w-16 aspect-h-9 overflow-hidden">
-        <img  class="object-cover w-full h-full transform group-hover:scale-110 transition-transform duration-500" alt={product.imageAlt} src={product.imageUrl} />
+        <img className="object-cover w-full h-full transform group-hover:scale-110 transition-transform duration-500" alt={product.imageAlt} src={product.imageUrl} />
       </div>
       <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
-      {/* {product.isNew && <div className="absolute top-4 left-4 bg-primary text-primary-foreground px-3 py-1 text-xs font-bold rounded-full">BARU</div>} */}
+      {product.isNew && <div className="absolute top-4 left-4 bg-primary text-primary-foreground px-3 py-1 text-xs font-bold rounded-full">BARU</div>}
     </div>
     <div className="p-6 flex flex-col flex-grow">
       <p className="text-sm text-primary font-semibold mb-1">{product.category}</p>
@@ -147,9 +147,13 @@ const PaymentModal = ({ product, onWhatsAppOrder }) => {
         </DialogDescription>
       </DialogHeader>
       <Tabs defaultValue="whatsapp" className="w-full mt-4">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="whatsapp"><MessageCircle className="w-4 h-4 mr-2" />WhatsApp</TabsTrigger>
-          <TabsTrigger value="qris"><QrCode className="w-4 h-4 mr-2" />QRIS</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="whatsapp" className="flex items-center justify-center">
+            <MessageCircle className="w-4 h-4 mr-2" />WhatsApp
+          </TabsTrigger>
+          <TabsTrigger value="qris" className="flex items-center justify-center">
+            <QrCode className="w-4 h-4 mr-2" />QRIS
+          </TabsTrigger>
         </TabsList>
         <TabsContent value="whatsapp" className="mt-4 p-4 bg-secondary/50 rounded-lg">
           <p className="text-sm text-muted-foreground mb-4">Klik tombol di bawah untuk mengirim pesan pesanan Anda langsung ke penjual.</p>
@@ -160,7 +164,7 @@ const PaymentModal = ({ product, onWhatsAppOrder }) => {
         <TabsContent value="qris" className="mt-4 p-4 bg-secondary/50 rounded-lg text-center">
           <p className="text-sm text-muted-foreground mb-4">Pindai kode QR di bawah ini menggunakan aplikasi pembayaran favorit Anda.</p>
           <div className="flex justify-center">
-            <img  class="w-48 h-48 bg-gray-300 rounded-md" alt="Contoh kode QRIS untuk pembayaran" src="qris.jpg" />
+            <img className="w-48 h-48 bg-gray-300 rounded-md" alt="Contoh kode QRIS untuk pembayaran" src="public/qris.jpg" />
           </div>
           <p className="text-xs text-muted-foreground mt-2">Total: {product.price}</p>
         </TabsContent>
@@ -169,7 +173,7 @@ const PaymentModal = ({ product, onWhatsAppOrder }) => {
   );
 };
 
-const ProductsSection = () => {
+const ProdukPage = () => {
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
@@ -187,36 +191,84 @@ const ProductsSection = () => {
   };
 
   return (
-    <section id="produk" className="py-20 md:py-32 products-bg">
-      <div className="container mx-auto px-6">
-        <div className="text-center max-w-3xl mx-auto mb-16">
-          <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">Produk & Pengalaman Unggulan</h2>
-          <p className="text-lg text-muted-foreground">Dari mahakarya budaya hingga petualangan seru, temukan dan dukung karya terbaik dari para pengrajin dan pemandu lokal.</p>
-        </div>
-        
-        <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {products.map((product) => (
-              <DialogTrigger key={product.name} asChild>
-                <div onClick={() => handleOrderClick(product)}>
-                  <ProductCard product={product} onOrder={() => {}} />
-                </div>
-              </DialogTrigger>
-            ))}
-          </div>
-          <DialogContent>
-            <PaymentModal product={selectedProduct} onWhatsAppOrder={handleWhatsAppOrder} />
-          </DialogContent>
-        </Dialog>
+    <>
+      <Helmet>
+        <title>Semua Produk - Desa Wukirsari</title>
+        <meta name="description" content="Jelajahi semua produk unggulan dan kerajinan tangan dari UMKM di Desa Wukirsari." />
+      </Helmet>
+      
+      <div className="min-h-screen bg-gradient-to-br from-background to-secondary/20 pt-24 pb-16">
+        <div className="container mx-auto px-6">
+          {/* Header Section */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, ease: "easeOut" }}
+            className="text-center max-w-3xl mx-auto mb-16"
+          >
+            <div className="inline-block p-6 bg-primary/10 rounded-full mb-8">
+              <ShoppingBag className="w-16 h-16 text-primary" />
+            </div>
+            <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-4">
+              Galeri Produk Wukirsari
+            </h1>
+            <p className="text-lg text-muted-foreground mb-8">
+              Temukan dan dukung karya terbaik dari para pengrajin dan UMKM Desa Wukirsari. 
+              Dari mahakarya budaya hingga produk kuliner otentik.
+            </p>
+            <div className="flex justify-center gap-2">
+              <span className="px-3 py-1 bg-primary/20 text-primary rounded-full text-sm font-medium">Kerajinan Tangan</span>
+              <span className="px-3 py-1 bg-primary/20 text-primary rounded-full text-sm font-medium">Kuliner</span>
+              <span className="px-3 py-1 bg-primary/20 text-primary rounded-full text-sm font-medium">Seni Pertunjukan</span>
+            </div>
+          </motion.div>
 
-        <div className="text-center mt-16">
-          <Link to="/produk">
-            <Button variant="outline" size="lg">Lihat Semua Produk <ArrowRight className="w-5 h-5 ml-2" /></Button>
-          </Link>
+          {/* Products Grid */}
+          <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.8, delay: 0.2 }}
+              className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8"
+            >
+              {products.map((product, index) => (
+                <DialogTrigger key={product.name} asChild>
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5, delay: index * 0.1 }}
+                    onClick={() => handleOrderClick(product)}
+                  >
+                    <ProductCard product={product} onOrder={() => {}} />
+                  </motion.div>
+                </DialogTrigger>
+              ))}
+            </motion.div>
+            <DialogContent className="max-w-md">
+              <PaymentModal product={selectedProduct} onWhatsAppOrder={handleWhatsAppOrder} />
+            </DialogContent>
+          </Dialog>
+
+          {/* Info Section */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.4 }}
+            className="text-center mt-16 p-8 bg-card/50 rounded-2xl border border-border/20"
+          >
+            <h3 className="text-2xl font-bold text-foreground mb-4">Butuh Bantuan?</h3>
+            <p className="text-muted-foreground mb-6">
+              Tim kami siap membantu Anda dalam memilih produk yang tepat atau menjawab pertanyaan seputar produk UMKM Wukirsari.
+            </p>
+            <Button onClick={() => handleWhatsAppOrder("Konsultasi Produk")} size="lg">
+              <MessageCircle className="w-5 h-5 mr-2" />
+              Konsultasi via WhatsApp
+            </Button>
+          </motion.div>
         </div>
       </div>
-    </section>
+    </>
   );
 };
 
-export default ProductsSection;
+export default ProdukPage;
