@@ -1,10 +1,221 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { BrainCircuit, Sparkles, Bot } from 'lucide-react';
+import { BrainCircuit, Sparkles, Bot, ShoppingBag, X, Send, MessageCircle, QrCode, ShoppingCart } from 'lucide-react';
 
-const AnimatedTyping = ({ text }) => {
+// Data produk dari kode yang diberikan
+const products = [
+  {
+    name: "Wedang Uwuh Bu Endang",
+    category: "Kuliner",
+    umkm: "UMKM Wukirsari",
+    price: "Rp20.000 / 10pcs",
+    imageAlt: "Tiga gelas wedang uwuh hangat disajikan di atas meja",
+    imageUrl: "https://horizons-cdn.hostinger.com/73e774d8-1f03-44b2-ba9c-4491a99e3f2f/831f4e5dfdf72e4880aa6b7ee71b46b8.jpg",
+    isNew: false,
+  },
+  {
+    name: "Handmade Batik",
+    category: "Kerajinan Tangan",
+    umkm: "Handmade batik",
+    price: "Rp700.000 - Rp800.000",
+    imageAlt: "Batik tulis Giriloyo dengan motif klasik",
+    imageUrl: "https://horizons-cdn.hostinger.com/73e774d8-1f03-44b2-ba9c-4491a99e3f2f/3dd1c78d54698e2fa97c00ef157f5362.jpg",
+    isNew: false,
+  },
+  {
+    name: "Wayang Kulit Arjuna",
+    category: "Seni Pertunjukan",
+    umkm: "Ituk Wayang",
+    price: "Rp600.000",
+    imageAlt: "Wayang kulit dari Pucung",
+    imageUrl: "wayang.jpeg",
+    isNew: true,
+  },
+  {
+    name: "Kipas Tangan Zainal",
+    category: "Kerajinan Tangan",
+    umkm: "Zainal",
+    price: "Rp25.000",
+    imageAlt: "Kipas bambu dengan motif batik",
+    imageUrl: "kipas.jpg",
+    isNew: true,
+  },
+  {
+    name: "Thiwul Mbak Iswati",
+    category: "Kuliner",
+    umkm: "Mbak Iswati",
+    price: "Rp15.000 / porsi",
+    imageAlt: "Thiwul instan disajikan dengan kelapa parut",
+    imageUrl: "https://horizons-cdn.hostinger.com/73e774d8-1f03-44b2-ba9c-4491a99e3f2f/1af69d4a5467c90cf617e50609d8d0cb.jpg",
+    isNew: true,
+  },
+  {
+    name: "Batik Sungsang",
+    category: "Kerajinan Tangan",
+    umkm: "Paguyuban Batik Giriloyo",
+    price: "Rp900.000",
+    imageAlt: "Batik Sungsang dengan motif abstrak dan warna cerah",
+    imageUrl: "https://horizons-cdn.hostinger.com/73e774d8-1f03-44b2-ba9c-4491a99e3f2f/5fc39e8d401246d025cbe6ff72389b49.jpg",
+    isNew: true,
+  },
+  {
+    name: "Tatik Batik",
+    category: "Kerajinan Tangan",
+    umkm: "Paguyuban Batik Giriloyo",
+    price: "Rp900.000 - Rp. 1.500.000",
+    imageAlt: "Kain dan tas batik bermotif cantik tersusun rapi di rak kayu",
+    imageUrl: "batik-1.jpg",
+    isNew: true,
+  },
+  {
+    name: "Kampung Batik Giriloyo",
+    category: "Kerajinan Tangan",
+    umkm: "Paguyuban Batik Giriloyo",
+    price: "Rp900.000 - Rp. 2.0000.000",
+    imageAlt: "Kain dan tas batik bermotif cantik tersusun rapi di rak kayu",
+    imageUrl: "batik.jpg",
+    isNew: true,
+  },
+  {
+    name: "Wedang Uwuh",
+    category: "Kerajinan Tangan",
+    umkm: "Wedang Uwuh HJ. Jazimah",
+    price: "Rp20.000 / pcs",
+    imageAlt: "Kain dan tas batik bermotif cantik tersusun rapi di rak kayu",
+    imageUrl: "uwuh.jpg",
+    isNew: true,
+  },
+  {
+    name: "Shalsabila Batik",
+    category: "Kerajinan Tangan",
+    umkm: "Shalsabila Batik",
+    price: "Rp900.000 - 1.500.000",
+    imageAlt: "Kain dan tas batik bermotif cantik tersusun rapi di rak kayu",
+    imageUrl: "batik-2.png",
+    isNew: true,
+  },
+];
+
+// Komponen Payment Modal untuk chatbot
+const PaymentModal = ({ product, onClose, onWhatsAppOrder }) => {
+  const [activeTab, setActiveTab] = useState('whatsapp');
+
+  if (!product) return null;
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="bg-card border border-border rounded-xl p-4 mb-4 shadow-lg"
+    >
+      <div className="flex items-center justify-between mb-3">
+        <h3 className="font-semibold text-foreground">Pesan: {product.name}</h3>
+        <Button variant="ghost" size="sm" onClick={onClose} className="h-6 w-6 p-0">
+          <X className="w-3 h-3" />
+        </Button>
+      </div>
+      
+      <p className="text-xs text-muted-foreground mb-3">
+        Pilih metode pembayaran atau hubungi kami via WhatsApp untuk menyelesaikan pesanan Anda.
+      </p>
+
+      {/* Tabs */}
+      <div className="w-full mb-3">
+        <div className="grid grid-cols-2 gap-1 bg-secondary/30 rounded-lg p-1">
+          <Button
+            variant={activeTab === 'whatsapp' ? 'default' : 'ghost'}
+            size="sm"
+            onClick={() => setActiveTab('whatsapp')}
+            className="text-xs h-7"
+          >
+            <MessageCircle className="w-3 h-3 mr-1" />
+            WhatsApp
+          </Button>
+          <Button
+            variant={activeTab === 'qris' ? 'default' : 'ghost'}
+            size="sm"
+            onClick={() => setActiveTab('qris')}
+            className="text-xs h-7"
+          >
+            <QrCode className="w-3 h-3 mr-1" />
+            QRIS
+          </Button>
+        </div>
+      </div>
+
+      {/* Tab Content */}
+      {activeTab === 'whatsapp' && (
+        <div className="p-3 bg-secondary/20 rounded-lg">
+          <p className="text-xs text-muted-foreground mb-3">
+            Klik tombol di bawah untuk mengirim pesan pesanan Anda langsung ke penjual.
+          </p>
+          <Button 
+            onClick={() => onWhatsAppOrder(product.name)} 
+            size="sm" 
+            className="w-full text-xs"
+          >
+            <MessageCircle className="w-3 h-3 mr-1" /> 
+            Lanjutkan ke WhatsApp
+          </Button>
+        </div>
+      )}
+
+      {activeTab === 'qris' && (
+        <div className="p-3 bg-secondary/20 rounded-lg text-center">
+          <p className="text-xs text-muted-foreground mb-3">
+            Pindai kode QR di bawah ini menggunakan aplikasi pembayaran favorit Anda.
+          </p>
+          <div className="flex justify-center mb-2">
+            <img 
+              className="w-32 h-32 bg-gray-300 rounded-md" 
+              alt="Contoh kode QRIS untuk pembayaran" 
+              src="qris.jpg" 
+            />
+          </div>
+          <p className="text-xs text-muted-foreground">Total: {product.price}</p>
+        </div>
+      )}
+    </motion.div>
+  );
+};
+
+const ProductCard = ({ product, onOrder }) => (
+  <motion.div
+    whileHover={{ scale: 1.02 }}
+    className="bg-card border border-border rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all duration-300"
+  >
+    <div className="relative aspect-[4/3] overflow-hidden">
+      <img 
+        className="w-full h-full object-cover transition-transform duration-500 hover:scale-105" 
+        alt={product.imageAlt} 
+        src={product.imageUrl} 
+      />
+      <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent"></div>
+      {product.isNew && (
+        <div className="absolute top-2 left-2 bg-primary text-primary-foreground px-2 py-1 text-xs font-bold rounded-full">
+          BARU
+        </div>
+      )}
+    </div>
+    <div className="p-3">
+      <p className="text-xs text-primary font-semibold mb-1">{product.category}</p>
+      <h3 className="text-sm font-bold text-foreground mb-1 line-clamp-1">{product.name}</h3>
+      <p className="text-xs text-muted-foreground mb-2">Oleh {product.umkm}</p>
+      {product.price && <p className="text-sm font-semibold text-foreground">{product.price}</p>}
+      <Button 
+        onClick={() => onOrder(product)} 
+        size="sm" 
+        className="w-full mt-2 text-xs"
+      >
+        <ShoppingBag className="w-3 h-3 mr-1" /> Pesan
+      </Button>
+    </div>
+  </motion.div>
+);
+
+const AnimatedTyping = ({ text, onComplete }) => {
   const [displayedText, setDisplayedText] = useState('');
 
   useEffect(() => {
@@ -13,121 +224,316 @@ const AnimatedTyping = ({ text }) => {
     const intervalId = setInterval(() => {
       setDisplayedText(text.substring(0, i + 1));
       i++;
-      if (i > text.length) {
+      if (i >= text.length) {
         clearInterval(intervalId);
+        if (onComplete) onComplete();
       }
     }, 20);
     return () => clearInterval(intervalId);
-  }, [text]);
-
-  return <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-8 text-left">{displayedText}<span className="animate-ping">|</span></p>;
-};
-
-const AiPlannerSection = () => {
-  const [aiInput, setAiInput] = useState('');
-  const [aiResponse, setAiResponse] = useState('');
-  const [isAiLoading, setIsAiLoading] = useState(false);
-
-  const handleAiSubmit = (e) => {
-    e.preventDefault();
-    if (!aiInput.trim() || isAiLoading) return;
-
-    setIsAiLoading(true);
-    setAiResponse('');
-
-    setTimeout(() => {
-      let response = "Tentu! Berdasarkan permintaan Anda, berikut adalah rekomendasi perjalanan yang sempurna di Wukirsari: Kunjungi sentra Batik Giriloyo di pagi hari, nikmati makan siang dengan kuliner lokal, lalu lanjutkan dengan belajar membuat Wayang Kulit di Pucung. Akhiri hari Anda dengan pemandangan matahari terbenam di Watu Gagak. Selamat menikmati!";
-      
-      const lowerCaseInput = aiInput.toLowerCase();
-      if (lowerCaseInput.includes("budaya")) {
-        response = "Untuk pengalaman budaya yang mendalam, saya sarankan Anda mengikuti workshop membatik di Giriloyo, kemudian mengunjungi sanggar Wayang Kulit Pucung untuk melihat proses pembuatannya dari dekat. Ini akan menjadi perjalanan yang tak terlupakan!";
-      } else if (lowerCaseInput.includes("kuliner") || lowerCaseInput.includes("makan")) {
-        response = "Pecinta kuliner wajib mencoba Sate Klathak yang legendaris di sekitar Wukirsari! Selain itu, jangan lewatkan jajanan pasar tradisional yang bisa Anda temukan di pagi hari. Untuk oleh-oleh, madu asli Wukirsari adalah pilihan terbaik.";
-      } else if (lowerCaseInput.includes("alam")) {
-        response = "Jika Anda mencari keindahan alam, mulailah dengan trekking ringan ke Watu Gagak untuk melihat pemandangan dari atas. Setelah itu, bersantailah di tepi Embung Wukirsari yang tenang. Udara segar dan pemandangan hijau akan memanjakan mata Anda.";
-      }
-
-      setAiResponse(response);
-      setIsAiLoading(false);
-    }, 2500);
-  };
+  }, [text, onComplete]);
 
   return (
-    <section id="ai-planner" className="py-20 md:py-32 bg-secondary/30 overflow-hidden">
-      <div className="container mx-auto px-6">
-        <motion.div 
-          className="relative bg-card/50 backdrop-blur-xl border border-primary/20 rounded-3xl p-8 md:p-16 text-center shadow-2xl shadow-primary/10"
-          initial={{ opacity: 0, scale: 0.9 }}
-          whileInView={{ opacity: 1, scale: 1 }}
-          viewport={{ once: true, amount: 0.3 }}
-          transition={{ duration: 0.8, ease: 'easeOut' }}
-        >
-          <div className="absolute -top-16 -left-16 w-64 h-64 bg-primary/10 rounded-full filter blur-3xl opacity-50"></div>
-          <div className="absolute -bottom-16 -right-16 w-64 h-64 bg-emerald-500/10 rounded-full filter blur-3xl opacity-50"></div>
-          
-          <div className="relative z-10">
-            <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 mb-8 border border-primary/20 shadow-lg">
-              <BrainCircuit className="w-10 h-10 text-primary animate-pulse" />
-            </div>
-            <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">Perencana Perjalanan Cerdas</h2>
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={aiResponse ? 'response' : 'prompt'}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                transition={{ duration: 0.5 }}
-              >
-                {aiResponse ? (
-                  <div className="flex items-start gap-4 max-w-2xl mx-auto mb-8">
-                    <div className="flex-shrink-0 w-10 h-10 rounded-full bg-primary text-primary-foreground flex items-center justify-center">
-                      <Bot className="w-6 h-6" />
-                    </div>
-                    <AnimatedTyping text={aiResponse} />
-                  </div>
-                ) : (
-                  <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-8">
-                    Bingung mau mulai dari mana? Tanyakan pada AI kami! Dapatkan rekomendasi personal untuk itinerary, kuliner, dan aktivitas unik di Wukirsari.
-                  </p>
-                )}
-              </motion.div>
-            </AnimatePresence>
-            
-            <form onSubmit={handleAiSubmit} className="max-w-xl mx-auto">
-              <div className="flex flex-col sm:flex-row gap-4">
-                <Input 
-                  type="text" 
-                  value={aiInput}
-                  onChange={(e) => setAiInput(e.target.value)}
-                  placeholder="Contoh: 'Rekomendasikan wisata budaya untuk 2 hari'"
-                  className="flex-grow h-12 bg-background/50 border-border/30 focus:ring-primary/50"
-                  disabled={isAiLoading}
-                />
-                <Button type="submit" size="lg" className="h-12" disabled={isAiLoading}>
-                  {isAiLoading ? (
-                    <>
-                      <motion.div
-                        animate={{ rotate: 360 }}
-                        transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
-                        className="w-5 h-5 mr-2"
-                      >
-                        <Sparkles className="w-5 h-5" />
-                      </motion.div>
-                      Memproses...
-                    </>
-                  ) : (
-                    <>
-                      <Sparkles className="w-5 h-5 mr-2" /> Tanya AI
-                    </>
-                  )}
-                </Button>
-              </div>
-            </form>
-          </div>
-        </motion.div>
+    <div className="flex items-start gap-2">
+      <div className="flex-shrink-0 w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center">
+        <Bot className="w-3 h-3" />
       </div>
-    </section>
+      <div className="flex-1">
+        <p className="text-sm text-foreground">
+          {displayedText}
+          {displayedText.length < text.length && <span className="animate-pulse">|</span>}
+        </p>
+      </div>
+    </div>
   );
 };
 
-export default AiPlannerSection;
+const ProductChatbot = () => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [messages, setMessages] = useState([]);
+  const [userInput, setUserInput] = useState('');
+  const [isTyping, setIsTyping] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const messagesEndRef = useRef(null);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages, showPaymentModal]);
+
+  // Initial message when chatbot opens
+  useEffect(() => {
+    if (isOpen && messages.length === 0) {
+      const welcomeMessage = "Halo! Saya asisten virtual produk UMKM Wukirsari. Saya bisa membantu Anda menemukan produk yang sesuai. Coba tanyakan tentang 'produk batik', 'kuliner', atau 'semua produk'!";
+      setIsTyping(true);
+      setTimeout(() => {
+        setMessages([{ type: 'bot', text: welcomeMessage }]);
+        setIsTyping(false);
+      }, 500);
+    }
+  }, [isOpen, messages.length]);
+
+  const handleWhatsAppOrder = (productName) => {
+    const phoneNumber = "628816413617";
+    const message = encodeURIComponent(`Halo, saya tertarik untuk memesan produk "${productName}" dari WukirTech.`);
+    const whatsappUrl = `https://wa.me/${phoneNumber}?text=${message}`;
+    window.open(whatsappUrl, '_blank');
+    setShowPaymentModal(false);
+    setSelectedProduct(null);
+  };
+
+  const handleOrderClick = (product) => {
+    setSelectedProduct(product);
+    setShowPaymentModal(true);
+  };
+
+  const closePaymentModal = () => {
+    setShowPaymentModal(false);
+    setSelectedProduct(null);
+  };
+
+  const filterProducts = (query) => {
+    const lowerQuery = query.toLowerCase();
+    
+    if (lowerQuery.includes('semua') || lowerQuery.includes('semua produk')) {
+      return products;
+    }
+    
+    if (lowerQuery.includes('batik')) {
+      return products.filter(product => 
+        product.name.toLowerCase().includes('batik') || 
+        product.category === 'Kerajinan Tangan'
+      );
+    }
+    
+    if (lowerQuery.includes('kuliner') || lowerQuery.includes('makan') || lowerQuery.includes('minuman')) {
+      return products.filter(product => product.category === 'Kuliner');
+    }
+    
+    if (lowerQuery.includes('kerajinan') || lowerQuery.includes('tangan')) {
+      return products.filter(product => product.category === 'Kerajinan Tangan');
+    }
+    
+    if (lowerQuery.includes('wayang') || lowerQuery.includes('seni')) {
+      return products.filter(product => product.category === 'Seni Pertunjukan');
+    }
+    
+    if (lowerQuery.includes('baru') || lowerQuery.includes('terbaru')) {
+      return products.filter(product => product.isNew);
+    }
+    
+    // Default search by name
+    return products.filter(product => 
+      product.name.toLowerCase().includes(lowerQuery) ||
+      product.umkm.toLowerCase().includes(lowerQuery)
+    );
+  };
+
+  const generateBotResponse = (userMessage) => {
+    const lowerMessage = userMessage.toLowerCase();
+    let response = '';
+    let productsToShow = [];
+
+    if (lowerMessage.includes('hai') || lowerMessage.includes('halo') || lowerMessage.includes('hello')) {
+      response = "Halo! Senang bertemu dengan Anda. Saya bisa membantu menemukan produk UMKM terbaik dari Wukirsari. Produk apa yang sedang Anda cari?";
+    } else if (lowerMessage.includes('terima kasih') || lowerMessage.includes('thanks')) {
+      response = "Sama-sama! Jika ada yang else yang bisa saya bantu, jangan ragu untuk bertanya 😊";
+    } else {
+      productsToShow = filterProducts(userMessage);
+      
+      if (productsToShow.length > 0) {
+        response = `Saya menemukan ${productsToShow.length} produk yang sesuai dengan pencarian Anda:`;
+      } else {
+        response = "Maaf, saya belum menemukan produk yang sesuai. Coba tanyakan tentang 'produk batik', 'kuliner khas', atau 'kerajinan tangan'.";
+      }
+    }
+
+    return { response, products: productsToShow };
+  };
+
+  const handleSendMessage = (e) => {
+    e.preventDefault();
+    if (!userInput.trim() || isTyping) return;
+
+    // Add user message
+    const userMessage = userInput.trim();
+    setMessages(prev => [...prev, { type: 'user', text: userMessage }]);
+    setUserInput('');
+    setIsTyping(true);
+
+    // Generate bot response after delay
+    setTimeout(() => {
+      const { response, products: responseProducts } = generateBotResponse(userMessage);
+      
+      const newMessages = [{ type: 'bot', text: response }];
+      
+      // Add products if any
+      if (responseProducts.length > 0) {
+        newMessages.push({ type: 'products', products: responseProducts });
+      }
+      
+      setMessages(prev => [...prev, ...newMessages]);
+      setIsTyping(false);
+    }, 1000);
+  };
+
+  const suggestedQueries = [
+    "Tampilkan semua produk",
+    "Produk batik",
+    "Kuliner khas",
+    "Produk terbaru",
+    "Kerajinan tangan"
+  ];
+
+  return (
+    <>
+      {/* Chatbot Toggle Button */}
+      <motion.button
+        onClick={() => setIsOpen(true)}
+        className="fixed bottom-6 right-6 w-14 h-14 bg-primary text-primary-foreground rounded-full shadow-lg flex items-center justify-center hover:shadow-xl transition-all duration-300 z-50"
+        whileHover={{ scale: 1.1 }}
+        whileTap={{ scale: 0.9 }}
+      >
+        <Bot className="w-6 h-6" />
+      </motion.button>
+
+      {/* Chatbot Modal */}
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.8 }}
+            className="fixed bottom-20 right-6 w-96 max-w-[calc(100vw-3rem)] h-[500px] bg-background border border-border rounded-2xl shadow-2xl flex flex-col z-50 overflow-hidden"
+          >
+            {/* Header */}
+            <div className="bg-primary text-primary-foreground p-4 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-full bg-primary-foreground/20 flex items-center justify-center">
+                  <Bot className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="font-semibold">Asisten Produk UMKM</h3>
+                  <p className="text-xs opacity-80">Online • Siap membantu</p>
+                </div>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setIsOpen(false)}
+                className="text-primary-foreground hover:bg-primary-foreground/20"
+              >
+                <X className="w-4 h-4" />
+              </Button>
+            </div>
+
+            {/* Messages Container */}
+            <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-secondary/10">
+              {messages.map((message, index) => (
+                <motion.div
+                  key={index}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className={message.type === 'user' ? 'flex justify-end' : 'flex justify-start'}
+                >
+                  {message.type === 'user' && (
+                    <div className="bg-primary text-primary-foreground rounded-2xl rounded-tr-none px-4 py-2 max-w-[80%]">
+                      <p className="text-sm">{message.text}</p>
+                    </div>
+                  )}
+                  
+                  {message.type === 'bot' && (
+                    <AnimatedTyping text={message.text} />
+                  )}
+                  
+                  {message.type === 'products' && (
+                    <div className="w-full">
+                      <div className="grid grid-cols-2 gap-2 mt-2">
+                        {message.products.map((product, productIndex) => (
+                          <ProductCard
+                            key={productIndex}
+                            product={product}
+                            onOrder={handleOrderClick}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </motion.div>
+              ))}
+              
+              {/* Payment Modal */}
+              {showPaymentModal && selectedProduct && (
+                <PaymentModal 
+                  product={selectedProduct}
+                  onClose={closePaymentModal}
+                  onWhatsAppOrder={handleWhatsAppOrder}
+                />
+              )}
+              
+              {isTyping && (
+                <div className="flex items-start gap-2">
+                  <div className="flex-shrink-0 w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center">
+                    <Bot className="w-3 h-3" />
+                  </div>
+                  <div className="flex gap-1 bg-card rounded-full px-3 py-2">
+                    <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce"></div>
+                    <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                    <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                  </div>
+                </div>
+              )}
+              
+              <div ref={messagesEndRef} />
+            </div>
+
+            {/* Suggested Queries */}
+            {messages.length <= 2 && !showPaymentModal && (
+              <div className="px-4 pb-2">
+                <div className="flex flex-wrap gap-2">
+                  {suggestedQueries.map((query, index) => (
+                    <Button
+                      key={index}
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setUserInput(query)}
+                      className="text-xs h-7"
+                    >
+                      {query}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Input Area */}
+            <form onSubmit={handleSendMessage} className="p-4 border-t border-border">
+              <div className="flex gap-2">
+                <Input
+                  type="text"
+                  value={userInput}
+                  onChange={(e) => setUserInput(e.target.value)}
+                  placeholder="Tanyakan tentang produk..."
+                  className="flex-1"
+                  disabled={isTyping || showPaymentModal}
+                />
+                <Button 
+                  type="submit" 
+                  size="icon"
+                  disabled={!userInput.trim() || isTyping || showPaymentModal}
+                >
+                  <Send className="w-4 h-4" />
+                </Button>
+              </div>
+            </form>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </>
+  );
+};
+
+export default ProductChatbot;

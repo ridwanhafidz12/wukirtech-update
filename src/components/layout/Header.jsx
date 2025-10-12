@@ -38,38 +38,41 @@ const Header = () => {
       <NavLink to="/" className={navLinkClasses} end>Beranda</NavLink>
       <NavLink to="/agenda" className={navLinkClasses}>Agenda</NavLink>
       <NavLink to="/produk" className={navLinkClasses}>Produk</NavLink>
-      <NavLink to="/planner" className={navLinkClasses}>AI Planner</NavLink>
+      {/* <NavLink to="/planner" className={navLinkClasses}>AI Planner</NavLink> */}
     </>
   );
 
   return (
     <>
-      <header className={cn(
-        "fixed top-0 left-0 right-0 z-50 transition-all duration-300",
-        scrolled ? "bg-background/80 backdrop-blur-lg border-b border-border/20 shadow-md" : "bg-transparent border-b border-transparent"
-      )}>
-        <div className="container mx-auto px-6 py-4 flex justify-between items-center">
-          <NavLink to="/" className="flex items-center gap-3">
-            <img 
-              src="/WUKIRTECH.png" 
-              alt="WukirTech Logo" 
-              className="w-8 h-8 object-contain"
-            />
-            <span className="text-2xl font-bold text-foreground">Wukir<span className="text-primary">Tech</span></span>
-          </NavLink>
-          <nav className="hidden md:flex items-center gap-8">
-            <NavLinks />
-          </nav>
-          {/* <div className="hidden md:flex">
-             <Button onClick={handleActionClick} variant="outline">Mulai Jelajah</Button>
-          </div> */}
-          <div className="md:hidden">
-            <Button onClick={() => setIsMenuOpen(true)} variant="ghost" size="icon">
-              <Menu className="w-6 h-6" />
-            </Button>
-          </div>
-        </div>
-      </header>
+<header className={cn(
+  "fixed top-0 left-0 right-0 z-50 transition-all duration-300",
+  scrolled ? "bg-background/80 backdrop-blur-lg border-b border-border/20 shadow-md" : "bg-transparent border-b border-transparent"
+)}>
+  <div className="container mx-auto px-6 py-4 flex justify-between items-center">
+    <NavLink to="/" className="flex items-center gap-3">
+      <img 
+        src="/WUKIRTECH.png" 
+        alt="WukirTech Logo" 
+        className="w-10 h-10 object-contain"  // ukuran diperbesar
+      />
+      <span className="text-2xl font-bold text-foreground">
+        Wukir<span className="text-primary">Tech</span>
+      </span>
+    </NavLink>
+    <nav className="hidden md:flex items-center gap-8">
+      <NavLinks />
+    </nav>
+    {/* <div className="hidden md:flex">
+       <Button onClick={handleActionClick} variant="outline">Mulai Jelajah</Button>
+    </div> */}
+    <div className="md:hidden">
+      <Button onClick={() => setIsMenuOpen(true)} variant="ghost" size="icon">
+        <Menu className="w-6 h-6" />
+      </Button>
+    </div>
+  </div>
+</header>
+
 
       <AnimatePresence>
         {isMenuOpen && (
