@@ -35,7 +35,7 @@ const InteractiveMap = () => {
         { pos: [-7.8951, 110.4299], name: "Embung Wukirsari", type: "Alam", desc: "Danau buatan yang asri untuk bersantai dan memancing." }
     ];
     return (
-        <MapContainer center={position} zoom={15} scrollWheelZoom={false} style={{ height: '100%', width: '100%' }}>
+        <MapContainer center={position} zoom={14} scrollWheelZoom={false} style={{ height: '100%', width: '100%' }}>
             <TileLayer
                 url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
                 attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
