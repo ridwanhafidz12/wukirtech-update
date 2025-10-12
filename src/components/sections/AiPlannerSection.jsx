@@ -2,107 +2,103 @@ import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { BrainCircuit, Sparkles, Bot, ShoppingBag, X, Send, MessageCircle, QrCode, ShoppingCart } from 'lucide-react';
+import { Bot, X, Send, MessageCircle, MapPin, Clock, Users, Mountain, Utensils, Palette } from 'lucide-react';
 
-// Data produk dari kode yang diberikan
-const products = [
+// Data wisata dari kode yang diberikan (tanpa harga dan gambar)
+const wisataData = [
   {
-    name: "Wedang Uwuh Bu Endang",
-    category: "Kuliner",
-    umkm: "UMKM Wukirsari",
-    price: "Rp20.000 / 10pcs",
-    imageAlt: "Tiga gelas wedang uwuh hangat disajikan di atas meja",
-    imageUrl: "https://horizons-cdn.hostinger.com/73e774d8-1f03-44b2-ba9c-4491a99e3f2f/831f4e5dfdf72e4880aa6b7ee71b46b8.jpg",
+    name: "Workshop Batik Giriloyo",
+    category: "Budaya & Kerajinan",
+    lokasi: "Sentra Batik Giriloyo",
+    imageAlt: "Workshop membatik di Giriloyo",
+    isNew: true,
+    durasi: "2-3 jam",
+    rating: "4.8",
+    fasilitas: ["Workshop", "Pemandu", "Materi Batik"],
+    icon: Palette
+  },
+  {
+    name: "Sanggar Wayang Kulit Pucung",
+    category: "Seni & Pertunjukan",
+    lokasi: "Desa Pucung",
+    imageAlt: "Pembuatan wayang kulit tradisional",
     isNew: false,
+    durasi: "1-2 jam",
+    rating: "4.7",
+    fasilitas: ["Demo Pembuatan", "Pertunjukan", "Workshop"],
+    icon: Palette
   },
   {
-    name: "Handmade Batik",
-    category: "Kerajinan Tangan",
-    umkm: "Handmade batik",
-    price: "Rp700.000 - Rp800.000",
-    imageAlt: "Batik tulis Giriloyo dengan motif klasik",
-    imageUrl: "https://horizons-cdn.hostinger.com/73e774d8-1f03-44b2-ba9c-4491a99e3f2f/3dd1c78d54698e2fa97c00ef157f5362.jpg",
-    isNew: false,
-  },
-  {
-    name: "Wayang Kulit Arjuna",
-    category: "Seni Pertunjukan",
-    umkm: "Ituk Wayang",
-    price: "Rp600.000",
-    imageAlt: "Wayang kulit dari Pucung",
-    imageUrl: "wayang.jpeg",
+    name: "Watu Gagak Sunset Point",
+    category: "Alam & Pemandangan",
+    lokasi: "Perbukitan Wukirsari",
+    imageAlt: "Pemandangan sunset dari Watu Gagak",
     isNew: true,
+    durasi: "1-3 jam",
+    rating: "4.9",
+    fasilitas: ["Area Foto", "Warung Kopi", "Trekking Path"],
+    icon: Mountain
   },
   {
-    name: "Kipas Tangan Zainal",
-    category: "Kerajinan Tangan",
-    umkm: "Zainal",
-    price: "Rp25.000",
-    imageAlt: "Kipas bambu dengan motif batik",
-    imageUrl: "kipas.jpg",
-    isNew: true,
-  },
-  {
-    name: "Thiwul Mbak Iswati",
+    name: "Wisata Kuliner Sate Klathak",
     category: "Kuliner",
-    umkm: "Mbak Iswati",
-    price: "Rp15.000 / porsi",
-    imageAlt: "Thiwul instan disajikan dengan kelapa parut",
-    imageUrl: "https://horizons-cdn.hostinger.com/73e774d8-1f03-44b2-ba9c-4491a99e3f2f/1af69d4a5467c90cf617e50609d8d0cb.jpg",
-    isNew: true,
+    lokasi: "Pusat Kuliner Wukirsari",
+    imageAlt: "Sate Klathak legendaris",
+    isNew: false,
+    durasi: "1-2 jam",
+    rating: "4.6",
+    fasilitas: ["Makanan Khas", "Area Makan", "Parkir Luas"],
+    icon: Utensils
   },
   {
-    name: "Batik Sungsang",
-    category: "Kerajinan Tangan",
-    umkm: "Paguyuban Batik Giriloyo",
-    price: "Rp900.000",
-    imageAlt: "Batik Sungsang dengan motif abstrak dan warna cerah",
-    imageUrl: "https://horizons-cdn.hostinger.com/73e774d8-1f03-44b2-ba9c-4491a99e3f2f/5fc39e8d401246d025cbe6ff72389b49.jpg",
+    name: "Embung Wukirsari",
+    category: "Alam & Rekreasi",
+    lokasi: "Tengah Desa Wukirsari",
+    imageAlt: "Embung dengan pemandangan alam",
     isNew: true,
+    durasi: "1-2 jam",
+    rating: "4.5",
+    fasilitas: ["Area Bersantai", "Perahu", "Spot Foto"],
+    icon: Mountain
   },
   {
-    name: "Tatik Batik",
-    category: "Kerajinan Tangan",
-    umkm: "Paguyuban Batik Giriloyo",
-    price: "Rp900.000 - Rp. 1.500.000",
-    imageAlt: "Kain dan tas batik bermotif cantik tersusun rapi di rak kayu",
-    imageUrl: "batik-1.jpg",
-    isNew: true,
+    name: "Pasar Tradisional Wukirsari",
+    category: "Kuliner & Belanja",
+    lokasi: "Pusat Desa Wukirsari",
+    imageAlt: "Pasar tradisional pagi hari",
+    isNew: false,
+    durasi: "1-2 jam",
+    rating: "4.4",
+    fasilitas: ["Jajanan Pasar", "Oleh-oleh", "Parkir"],
+    icon: Utensils
   },
   {
-    name: "Kampung Batik Giriloyo",
-    category: "Kerajinan Tangan",
-    umkm: "Paguyuban Batik Giriloyo",
-    price: "Rp900.000 - Rp. 2.0000.000",
-    imageAlt: "Kain dan tas batik bermotif cantik tersusun rapi di rak kayu",
-    imageUrl: "batik.jpg",
+    name: "Trekking Bukit Wukirsari",
+    category: "Alam & Petualangan",
+    lokasi: "Perbukitan Sekitar",
+    imageAlt: "Jalur trekking di bukit",
     isNew: true,
+    durasi: "2-4 jam",
+    rating: "4.7",
+    fasilitas: ["Pemandu", "Air Minum", "First Aid"],
+    icon: Mountain
   },
   {
-    name: "Wedang Uwuh",
-    category: "Kerajinan Tangan",
-    umkm: "Wedang Uwuh HJ. Jazimah",
-    price: "Rp20.000 / pcs",
-    imageAlt: "Kain dan tas batik bermotif cantik tersusun rapi di rak kayu",
-    imageUrl: "uwuh.jpg",
+    name: "Madu Asli Wukirsari",
+    category: "Oleh-oleh & Kerajinan",
+    lokasi: "UMKM Madu Wukirsari",
+    imageAlt: "Madu asli produksi lokal",
     isNew: true,
-  },
-  {
-    name: "Shalsabila Batik",
-    category: "Kerajinan Tangan",
-    umkm: "Shalsabila Batik",
-    price: "Rp900.000 - 1.500.000",
-    imageAlt: "Kain dan tas batik bermotif cantik tersusun rapi di rak kayu",
-    imageUrl: "batik-2.png",
-    isNew: true,
-  },
+    durasi: "30 menit - 1 jam",
+    rating: "4.8",
+    fasilitas: ["Demo Produksi", "Tasting", "Packaging"],
+    icon: Users
+  }
 ];
 
-// Komponen Payment Modal untuk chatbot
-const PaymentModal = ({ product, onClose, onWhatsAppOrder }) => {
-  const [activeTab, setActiveTab] = useState('whatsapp');
-
-  if (!product) return null;
+// Komponen Payment Modal yang disederhanakan (hanya WhatsApp)
+const PaymentModal = ({ wisata, onClose, onWhatsAppOrder }) => {
+  if (!wisata) return null;
 
   return (
     <motion.div
@@ -111,109 +107,97 @@ const PaymentModal = ({ product, onClose, onWhatsAppOrder }) => {
       className="bg-card border border-border rounded-xl p-4 mb-4 shadow-lg"
     >
       <div className="flex items-center justify-between mb-3">
-        <h3 className="font-semibold text-foreground">Pesan: {product.name}</h3>
+        <h3 className="font-semibold text-foreground">Informasi: {wisata.name}</h3>
         <Button variant="ghost" size="sm" onClick={onClose} className="h-6 w-6 p-0">
           <X className="w-3 h-3" />
         </Button>
       </div>
       
       <p className="text-xs text-muted-foreground mb-3">
-        Pilih metode pembayaran atau hubungi kami via WhatsApp untuk menyelesaikan pesanan Anda.
+        Hubungi kami via WhatsApp untuk informasi lebih lanjut tentang wisata ini.
       </p>
 
-      {/* Tabs */}
-      <div className="w-full mb-3">
-        <div className="grid grid-cols-2 gap-1 bg-secondary/30 rounded-lg p-1">
-          <Button
-            variant={activeTab === 'whatsapp' ? 'default' : 'ghost'}
-            size="sm"
-            onClick={() => setActiveTab('whatsapp')}
-            className="text-xs h-7"
-          >
-            <MessageCircle className="w-3 h-3 mr-1" />
-            WhatsApp
-          </Button>
-          <Button
-            variant={activeTab === 'qris' ? 'default' : 'ghost'}
-            size="sm"
-            onClick={() => setActiveTab('qris')}
-            className="text-xs h-7"
-          >
-            <QrCode className="w-3 h-3 mr-1" />
-            QRIS
-          </Button>
-        </div>
+      <div className="p-3 bg-secondary/20 rounded-lg">
+        <p className="text-xs text-muted-foreground mb-3">
+          Klik tombol di bawah untuk mengirim pesan langsung ke kami.
+        </p>
+        <Button 
+          onClick={() => onWhatsAppOrder(wisata.name)} 
+          size="sm" 
+          className="w-full text-xs"
+        >
+          <MessageCircle className="w-3 h-3 mr-1" /> 
+          Konsultasi via WhatsApp
+        </Button>
       </div>
-
-      {/* Tab Content */}
-      {activeTab === 'whatsapp' && (
-        <div className="p-3 bg-secondary/20 rounded-lg">
-          <p className="text-xs text-muted-foreground mb-3">
-            Klik tombol di bawah untuk mengirim pesan pesanan Anda langsung ke penjual.
-          </p>
-          <Button 
-            onClick={() => onWhatsAppOrder(product.name)} 
-            size="sm" 
-            className="w-full text-xs"
-          >
-            <MessageCircle className="w-3 h-3 mr-1" /> 
-            Lanjutkan ke WhatsApp
-          </Button>
-        </div>
-      )}
-
-      {activeTab === 'qris' && (
-        <div className="p-3 bg-secondary/20 rounded-lg text-center">
-          <p className="text-xs text-muted-foreground mb-3">
-            Pindai kode QR di bawah ini menggunakan aplikasi pembayaran favorit Anda.
-          </p>
-          <div className="flex justify-center mb-2">
-            <img 
-              className="w-32 h-32 bg-gray-300 rounded-md" 
-              alt="Contoh kode QRIS untuk pembayaran" 
-              src="qris.jpg" 
-            />
-          </div>
-          <p className="text-xs text-muted-foreground">Total: {product.price}</p>
-        </div>
-      )}
     </motion.div>
   );
 };
 
-const ProductCard = ({ product, onOrder }) => (
-  <motion.div
-    whileHover={{ scale: 1.02 }}
-    className="bg-card border border-border rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all duration-300"
-  >
-    <div className="relative aspect-[4/3] overflow-hidden">
-      <img 
-        className="w-full h-full object-cover transition-transform duration-500 hover:scale-105" 
-        alt={product.imageAlt} 
-        src={product.imageUrl} 
-      />
-      <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent"></div>
-      {product.isNew && (
-        <div className="absolute top-2 left-2 bg-primary text-primary-foreground px-2 py-1 text-xs font-bold rounded-full">
-          BARU
+const WisataCard = ({ wisata, onOrder }) => {
+  const IconComponent = wisata.icon || Mountain;
+  
+  return (
+    <motion.div
+      whileHover={{ scale: 1.02 }}
+      className="bg-card border border-border rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all duration-300"
+    >
+      <div className="p-3">
+        <div className="flex items-start gap-3 mb-2">
+          <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+            <IconComponent className="w-5 h-5 text-primary" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-xs text-primary font-semibold mb-1">{wisata.category}</p>
+            <h3 className="text-sm font-bold text-foreground line-clamp-2 leading-tight">{wisata.name}</h3>
+          </div>
         </div>
-      )}
-    </div>
-    <div className="p-3">
-      <p className="text-xs text-primary font-semibold mb-1">{product.category}</p>
-      <h3 className="text-sm font-bold text-foreground mb-1 line-clamp-1">{product.name}</h3>
-      <p className="text-xs text-muted-foreground mb-2">Oleh {product.umkm}</p>
-      {product.price && <p className="text-sm font-semibold text-foreground">{product.price}</p>}
-      <Button 
-        onClick={() => onOrder(product)} 
-        size="sm" 
-        className="w-full mt-2 text-xs"
-      >
-        <ShoppingBag className="w-3 h-3 mr-1" /> Pesan
-      </Button>
-    </div>
-  </motion.div>
-);
+        
+        <div className="flex items-center gap-1 text-xs text-muted-foreground mb-1">
+          <MapPin className="w-3 h-3" />
+          <span className="line-clamp-1">{wisata.lokasi}</span>
+        </div>
+        
+        <div className="flex items-center justify-between text-xs text-muted-foreground mb-2">
+          <div className="flex items-center gap-1">
+            <Clock className="w-3 h-3" />
+            <span>{wisata.durasi}</span>
+          </div>
+          <div className="flex items-center gap-1 bg-secondary px-2 py-1 rounded-full">
+            <span>⭐ {wisata.rating}</span>
+          </div>
+        </div>
+
+        {wisata.isNew && (
+          <div className="inline-block bg-primary text-primary-foreground px-2 py-1 text-xs font-bold rounded-full mb-2">
+            BARU
+          </div>
+        )}
+        
+        <div className="flex flex-wrap gap-1 mb-3">
+          {wisata.fasilitas.slice(0, 2).map((fasilitas, index) => (
+            <span key={index} className="text-xs bg-secondary px-2 py-1 rounded-md">
+              {fasilitas}
+            </span>
+          ))}
+          {wisata.fasilitas.length > 2 && (
+            <span className="text-xs bg-secondary px-2 py-1 rounded-md">
+              +{wisata.fasilitas.length - 2} lagi
+            </span>
+          )}
+        </div>
+        
+        <Button 
+          onClick={() => onOrder(wisata)} 
+          size="sm" 
+          className="w-full text-xs"
+        >
+          <MessageCircle className="w-3 h-3 mr-1" /> Info Lebih Lanjut
+        </Button>
+      </div>
+    </motion.div>
+  );
+};
 
 const AnimatedTyping = ({ text, onComplete }) => {
   const [displayedText, setDisplayedText] = useState('');
@@ -247,12 +231,12 @@ const AnimatedTyping = ({ text, onComplete }) => {
   );
 };
 
-const ProductChatbot = () => {
+const WisataChatbot = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState([]);
   const [userInput, setUserInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
-  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [selectedWisata, setSelectedWisata] = useState(null);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const messagesEndRef = useRef(null);
 
@@ -267,7 +251,7 @@ const ProductChatbot = () => {
   // Initial message when chatbot opens
   useEffect(() => {
     if (isOpen && messages.length === 0) {
-      const welcomeMessage = "Halo! Saya asisten virtual produk UMKM Wukirsari. Saya bisa membantu Anda menemukan produk yang sesuai. Coba tanyakan tentang 'produk batik', 'kuliner', atau 'semua produk'!";
+      const welcomeMessage = "Halo! Saya asisten virtual wisata Wukirsari. Saya bisa membantu Anda menemukan destinasi wisata yang sesuai. Coba tanyakan tentang 'wisata alam', 'budaya', 'kuliner', atau 'semua wisata'!";
       setIsTyping(true);
       setTimeout(() => {
         setMessages([{ type: 'bot', text: welcomeMessage }]);
@@ -276,82 +260,90 @@ const ProductChatbot = () => {
     }
   }, [isOpen, messages.length]);
 
-  const handleWhatsAppOrder = (productName) => {
+  const handleWhatsAppOrder = (wisataName) => {
     const phoneNumber = "628816413617";
-    const message = encodeURIComponent(`Halo, saya tertarik untuk memesan produk "${productName}" dari WukirTech.`);
+    const message = encodeURIComponent(`Halo, saya tertarik dengan wisata "${wisataName}" di Wukirsari. Bisa info lebih lanjut?`);
     const whatsappUrl = `https://wa.me/${phoneNumber}?text=${message}`;
     window.open(whatsappUrl, '_blank');
     setShowPaymentModal(false);
-    setSelectedProduct(null);
+    setSelectedWisata(null);
   };
 
-  const handleOrderClick = (product) => {
-    setSelectedProduct(product);
-    setShowPaymentModal(true);
-  };
-
-  const closePaymentModal = () => {
-    setShowPaymentModal(false);
-    setSelectedProduct(null);
-  };
-
-  const filterProducts = (query) => {
+  const filterWisata = (query) => {
     const lowerQuery = query.toLowerCase();
     
-    if (lowerQuery.includes('semua') || lowerQuery.includes('semua produk')) {
-      return products;
+    if (lowerQuery.includes('semua') || lowerQuery.includes('semua wisata')) {
+      return wisataData;
     }
     
-    if (lowerQuery.includes('batik')) {
-      return products.filter(product => 
-        product.name.toLowerCase().includes('batik') || 
-        product.category === 'Kerajinan Tangan'
+    if (lowerQuery.includes('alam') || lowerQuery.includes('pemandangan') || lowerQuery.includes('trekking')) {
+      return wisataData.filter(wisata => 
+        wisata.category.includes('Alam') || 
+        wisata.name.toLowerCase().includes('watu') ||
+        wisata.name.toLowerCase().includes('embung') ||
+        wisata.name.toLowerCase().includes('bukit')
       );
     }
     
-    if (lowerQuery.includes('kuliner') || lowerQuery.includes('makan') || lowerQuery.includes('minuman')) {
-      return products.filter(product => product.category === 'Kuliner');
+    if (lowerQuery.includes('budaya') || lowerQuery.includes('kerajinan') || lowerQuery.includes('seni')) {
+      return wisataData.filter(wisata => 
+        wisata.category.includes('Budaya') || 
+        wisata.category.includes('Seni') ||
+        wisata.name.toLowerCase().includes('batik') ||
+        wisata.name.toLowerCase().includes('wayang')
+      );
     }
     
-    if (lowerQuery.includes('kerajinan') || lowerQuery.includes('tangan')) {
-      return products.filter(product => product.category === 'Kerajinan Tangan');
+    if (lowerQuery.includes('kuliner') || lowerQuery.includes('makan') || lowerQuery.includes('jajanan')) {
+      return wisataData.filter(wisata => 
+        wisata.category.includes('Kuliner') || 
+        wisata.name.toLowerCase().includes('sate') ||
+        wisata.name.toLowerCase().includes('pasar')
+      );
     }
     
-    if (lowerQuery.includes('wayang') || lowerQuery.includes('seni')) {
-      return products.filter(product => product.category === 'Seni Pertunjukan');
+    if (lowerQuery.includes('oleh-oleh') || lowerQuery.includes('madu')) {
+      return wisataData.filter(wisata => 
+        wisata.category.includes('Oleh-oleh') || 
+        wisata.name.toLowerCase().includes('madu')
+      );
     }
     
     if (lowerQuery.includes('baru') || lowerQuery.includes('terbaru')) {
-      return products.filter(product => product.isNew);
+      return wisataData.filter(wisata => wisata.isNew);
     }
     
     // Default search by name
-    return products.filter(product => 
-      product.name.toLowerCase().includes(lowerQuery) ||
-      product.umkm.toLowerCase().includes(lowerQuery)
+    return wisataData.filter(wisata => 
+      wisata.name.toLowerCase().includes(lowerQuery) ||
+      wisata.lokasi.toLowerCase().includes(lowerQuery) ||
+      wisata.category.toLowerCase().includes(lowerQuery)
     );
   };
 
   const generateBotResponse = (userMessage) => {
     const lowerMessage = userMessage.toLowerCase();
     let response = '';
-    let productsToShow = [];
+    let wisataToShow = [];
 
     if (lowerMessage.includes('hai') || lowerMessage.includes('halo') || lowerMessage.includes('hello')) {
-      response = "Halo! Senang bertemu dengan Anda. Saya bisa membantu menemukan produk UMKM terbaik dari Wukirsari. Produk apa yang sedang Anda cari?";
+      response = "Halo! Senang bertemu dengan Anda. Saya bisa membantu menemukan destinasi wisata terbaik di Wukirsari. Jenis wisata apa yang sedang Anda cari?";
     } else if (lowerMessage.includes('terima kasih') || lowerMessage.includes('thanks')) {
       response = "Sama-sama! Jika ada yang else yang bisa saya bantu, jangan ragu untuk bertanya 😊";
+    } else if (lowerMessage.includes('rekomendasi') || lowerMessage.includes('sarankan')) {
+      response = "Berdasarkan preferensi pengunjung, berikut beberapa wisata populer di Wukirsari:";
+      wisataToShow = wisataData.filter(wisata => wisata.rating >= 4.7).slice(0, 4);
     } else {
-      productsToShow = filterProducts(userMessage);
+      wisataToShow = filterWisata(userMessage);
       
-      if (productsToShow.length > 0) {
-        response = `Saya menemukan ${productsToShow.length} produk yang sesuai dengan pencarian Anda:`;
+      if (wisataToShow.length > 0) {
+        response = `Saya menemukan ${wisataToShow.length} destinasi wisata yang sesuai dengan pencarian Anda:`;
       } else {
-        response = "Maaf, saya belum menemukan produk yang sesuai. Coba tanyakan tentang 'produk batik', 'kuliner khas', atau 'kerajinan tangan'.";
+        response = "Maaf, saya belum menemukan wisata yang sesuai. Coba tanyakan tentang 'wisata alam', 'budaya tradisional', 'kuliner khas', atau 'wisata terbaru'.";
       }
     }
 
-    return { response, products: productsToShow };
+    return { response, wisata: wisataToShow };
   };
 
   const handleSendMessage = (e) => {
@@ -366,13 +358,13 @@ const ProductChatbot = () => {
 
     // Generate bot response after delay
     setTimeout(() => {
-      const { response, products: responseProducts } = generateBotResponse(userMessage);
+      const { response, wisata: responseWisata } = generateBotResponse(userMessage);
       
       const newMessages = [{ type: 'bot', text: response }];
       
-      // Add products if any
-      if (responseProducts.length > 0) {
-        newMessages.push({ type: 'products', products: responseProducts });
+      // Add wisata if any
+      if (responseWisata.length > 0) {
+        newMessages.push({ type: 'wisata', wisata: responseWisata });
       }
       
       setMessages(prev => [...prev, ...newMessages]);
@@ -380,12 +372,23 @@ const ProductChatbot = () => {
     }, 1000);
   };
 
+  const handleOrderClick = (wisata) => {
+    setSelectedWisata(wisata);
+    setShowPaymentModal(true);
+  };
+
+  const closePaymentModal = () => {
+    setShowPaymentModal(false);
+    setSelectedWisata(null);
+  };
+
   const suggestedQueries = [
-    "Tampilkan semua produk",
-    "Produk batik",
+    "Tampilkan semua wisata",
+    "Wisata alam",
+    "Budaya & kerajinan",
     "Kuliner khas",
-    "Produk terbaru",
-    "Kerajinan tangan"
+    "Wisata terbaru",
+    "Rekomendasi terpopuler"
   ];
 
   return (
@@ -416,7 +419,7 @@ const ProductChatbot = () => {
                   <Bot className="w-4 h-4" />
                 </div>
                 <div>
-                  <h3 className="font-semibold">Asisten WukirTech</h3>
+                  <h3 className="font-semibold">Asisten Wisata Wukirsari</h3>
                   <p className="text-xs opacity-80">Online • Siap membantu</p>
                 </div>
               </div>
@@ -449,13 +452,13 @@ const ProductChatbot = () => {
                     <AnimatedTyping text={message.text} />
                   )}
                   
-                  {message.type === 'products' && (
+                  {message.type === 'wisata' && (
                     <div className="w-full">
-                      <div className="grid grid-cols-2 gap-2 mt-2">
-                        {message.products.map((product, productIndex) => (
-                          <ProductCard
-                            key={productIndex}
-                            product={product}
+                      <div className="grid grid-cols-1 gap-2 mt-2">
+                        {message.wisata.map((wisata, wisataIndex) => (
+                          <WisataCard
+                            key={wisataIndex}
+                            wisata={wisata}
                             onOrder={handleOrderClick}
                           />
                         ))}
@@ -466,9 +469,9 @@ const ProductChatbot = () => {
               ))}
               
               {/* Payment Modal */}
-              {showPaymentModal && selectedProduct && (
+              {showPaymentModal && selectedWisata && (
                 <PaymentModal 
-                  product={selectedProduct}
+                  wisata={selectedWisata}
                   onClose={closePaymentModal}
                   onWhatsAppOrder={handleWhatsAppOrder}
                 />
@@ -516,7 +519,7 @@ const ProductChatbot = () => {
                   type="text"
                   value={userInput}
                   onChange={(e) => setUserInput(e.target.value)}
-                  placeholder="Tanyakan tentang produk..."
+                  placeholder="Tanyakan tentang wisata..."
                   className="flex-1"
                   disabled={isTyping || showPaymentModal}
                 />
@@ -536,4 +539,4 @@ const ProductChatbot = () => {
   );
 };
 
-export default ProductChatbot;
+export default WisataChatbot;
