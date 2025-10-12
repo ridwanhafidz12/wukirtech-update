@@ -512,8 +512,7 @@ const QuickSuggestions = ({ onSuggestionClick }) => {
     "Wisata alam dengan harga terjangkau",
     "Tour kuliner lokal lengkap",
     "Paket keluarga hemat 1 hari",
-    "Destinasi wisata populer",
-    "Aktivitas outdoor terbaik"
+    "Destinasi wisata populer"
   ];
 
   return (
