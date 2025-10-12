@@ -416,7 +416,7 @@ const ProductChatbot = () => {
                   <Bot className="w-4 h-4" />
                 </div>
                 <div>
-                  <h3 className="font-semibold">Asisten Produk UMKM</h3>
+                  <h3 className="font-semibold">Asisten WukirTech</h3>
                   <p className="text-xs opacity-80">Online • Siap membantu</p>
                 </div>
               </div>
