@@ -182,13 +182,18 @@ const ProdukPage = () => {
     setIsModalOpen(true);
   };
 
-  const handleWhatsAppOrder = (productName) => {
-    const phoneNumber = "628816413617";
-    const message = encodeURIComponent(`Halo, saya tertarik untuk memesan produk "${productName}" dari WukirTech.`);
-    const whatsappUrl = `https://wa.me/${phoneNumber}?text=${message}`;
-    window.open(whatsappUrl, '_blank');
-    setIsModalOpen(false);
-  };
+const handleWhatsAppOrder = (productName) => {
+  const phoneNumber = "628816413617";
+  const message = encodeURIComponent(`Halo, saya tertarik untuk memesan produk "${productName}" dari WukirTech.`);
+  const whatsappUrl = `https://wa.me/${phoneNumber}?text=${message}`;
+
+  // Aman jika dipanggil lewat event klik user
+  const newTab = window.open(whatsappUrl, '_blank', 'noopener,noreferrer');
+  if (!newTab) window.location.href = whatsappUrl;
+
+  setIsModalOpen(false);
+};
+
 
   return (
     <>
