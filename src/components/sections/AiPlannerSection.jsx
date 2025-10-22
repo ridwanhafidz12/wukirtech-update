@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { BrainCircuit, Sparkles, Bot, Wand2, Mountain, Utensils, Palette, ShoppingBag, Users, MapPin, Calendar, Clock, Star, CheckCircle, Send, X, Minimize2, DollarSign, Navigation, Camera, Coffee, Home } from 'lucide-react';
+import { BrainCircuit, Sparkles, Bot, Wand2, Mountain, Utensils, Palette, ShoppingBag, Users, MapPin, Calendar, Clock, Star, CheckCircle, Send, X, Minimize2, DollarSign, Navigation, Camera, Coffee, Home, QrCode, MessageCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 // Data UMKM dan Produk
@@ -358,8 +358,82 @@ const aiResponseItem = {
   },
 };
 
+// Komponen Modal QRIS
+const QRISModal = ({ isOpen, onClose, packageData }) => {
+  if (!isOpen) return null;
+
+  return (
+    <AnimatePresence>
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+        onClick={onClose}
+      >
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0, scale: 0.9 }}
+          className="bg-card border border-border rounded-xl p-6 max-w-sm w-full"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="font-bold text-lg text-foreground">Pembayaran {packageData?.name}</h3>
+            <Button variant="ghost" size="icon" onClick={onClose} className="h-8 w-8">
+              <X className="w-4 h-4" />
+            </Button>
+          </div>
+
+          <div className="text-center space-y-4">
+            <div className="bg-secondary/30 rounded-lg p-4">
+              <p className="text-sm text-muted-foreground mb-2">Total Pembayaran</p>
+              <p className="text-2xl font-bold text-primary">{packageData?.price}</p>
+              <p className="text-xs text-muted-foreground mt-1">/orang</p>
+            </div>
+
+            <div className="flex justify-center">
+              <div className="bg-white p-4 rounded-lg border border-border">
+                <img 
+                  src="/qris.jpg" 
+                  alt="QRIS Payment Code" 
+                  className="w-48 h-48 object-contain"
+                />
+              </div>
+            </div>
+
+            <p className="text-xs text-muted-foreground">
+              Scan QR code di atas menggunakan aplikasi e-wallet atau mobile banking Anda
+            </p>
+
+            <div className="flex gap-2">
+              <Button 
+                variant="outline" 
+                className="flex-1"
+                onClick={() => {
+                  const message = encodeURIComponent(
+                    `Halo, saya ingin memesan paket wisata "${packageData?.name}" dengan harga ${packageData?.price}. Bisa info lebih lanjut?`
+                  );
+                  window.open(`https://wa.me/628816413617?text=${message}`, '_blank');
+                }}
+              >
+                <MessageCircle className="w-4 h-4 mr-2" />
+                WhatsApp
+              </Button>
+              <Button className="flex-1" onClick={onClose}>
+                <CheckCircle className="w-4 h-4 mr-2" />
+                Selesai
+              </Button>
+            </div>
+          </div>
+        </motion.div>
+      </motion.div>
+    </AnimatePresence>
+  );
+};
+
 // Komponen Kartu Paket Wisata yang Diperbarui
-const TourPackageCard = ({ pkg, index }) => (
+const TourPackageCard = ({ pkg, index, onOrderClick }) => (
   <motion.div
     initial={{ opacity: 0, y: 20 }}
     animate={{ opacity: 1, y: 0 }}
@@ -428,7 +502,11 @@ const TourPackageCard = ({ pkg, index }) => (
       </span>
     </div>
 
-    <Button className="w-full mt-3" size="sm">
+    <Button 
+      className="w-full mt-3" 
+      size="sm"
+      onClick={() => onOrderClick(pkg)}
+    >
       Pesan Sekarang
     </Button>
   </motion.div>
@@ -536,7 +614,7 @@ const QuickSuggestions = ({ onSuggestionClick }) => {
   );
 };
 
-const AiResponseVisualizer = ({ response }) => {
+const AiResponseVisualizer = ({ response, onOrderClick }) => {
   const [parsedResponse, setParsedResponse] = useState(null);
   const responseRef = useRef(null);
 
@@ -668,7 +746,12 @@ const AiResponseVisualizer = ({ response }) => {
             </h4>
             <div className="grid grid-cols-1 gap-3">
               {parsedResponse.packages.slice(0, 3).map((pkg, index) => (
-                <TourPackageCard key={pkg.id} pkg={pkg} index={index} />
+                <TourPackageCard 
+                  key={pkg.id} 
+                  pkg={pkg} 
+                  index={index}
+                  onOrderClick={onOrderClick}
+                />
               ))}
             </div>
           </motion.div>
@@ -750,6 +833,8 @@ const AiPlannerSection = () => {
   const [aiResponse, setAiResponse] = useState('');
   const [isAiLoading, setIsAiLoading] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
+  const [selectedPackage, setSelectedPackage] = useState(null);
+  const [showQRISModal, setShowQRISModal] = useState(false);
   const containerRef = useRef(null);
 
   const generateAIResponse = (userInput) => {
@@ -820,6 +905,11 @@ const AiPlannerSection = () => {
     setIsMinimized(!isMinimized);
   };
 
+  const handleOrderClick = (packageData) => {
+    setSelectedPackage(packageData);
+    setShowQRISModal(true);
+  };
+
   if (isMinimized) {
     return (
       <motion.div
@@ -840,118 +930,130 @@ const AiPlannerSection = () => {
   }
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20, scale: 0.9 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
-      exit={{ opacity: 0, y: 20, scale: 0.9 }}
-      className="fixed bottom-6 right-6 z-50 w-96 h-[500px] bg-card/95 backdrop-blur-xl border border-primary/20 rounded-2xl shadow-2xl shadow-primary/10 flex flex-col overflow-hidden"
-    >
-      {/* Header */}
-      <div className="flex-shrink-0 bg-gradient-to-r from-primary/10 to-primary/5 border-b border-border/20 p-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-primary text-primary-foreground flex items-center justify-center">
-              <BrainCircuit className="w-5 h-5" />
+    <>
+      <motion.div
+        initial={{ opacity: 0, y: 20, scale: 0.9 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        exit={{ opacity: 0, y: 20, scale: 0.9 }}
+        className="fixed bottom-6 right-6 z-50 w-96 h-[500px] bg-card/95 backdrop-blur-xl border border-primary/20 rounded-2xl shadow-2xl shadow-primary/10 flex flex-col overflow-hidden"
+      >
+        {/* Header */}
+        <div className="flex-shrink-0 bg-gradient-to-r from-primary/10 to-primary/5 border-b border-border/20 p-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-primary text-primary-foreground flex items-center justify-center">
+                <BrainCircuit className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="font-bold text-foreground text-base">AI Travel Planner</h3>
+                <p className="text-xs text-muted-foreground">Wukirsari Tourism Assistant</p>
+              </div>
             </div>
-            <div>
-              <h3 className="font-bold text-foreground text-base">AI Travel Planner</h3>
-              <p className="text-xs text-muted-foreground">Wukirsari Tourism Assistant</p>
+            <div className="flex gap-1">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7"
+                onClick={toggleMinimize}
+              >
+                <Minimize2 className="w-3 h-3" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7"
+                onClick={() => {
+                  setAiResponse('');
+                  setAiInput('');
+                  setIsMinimized(true);
+                }}
+              >
+                <X className="w-3 h-3" />
+              </Button>
             </div>
-          </div>
-          <div className="flex gap-1">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-7 w-7"
-              onClick={toggleMinimize}
-            >
-              <Minimize2 className="w-3 h-3" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-7 w-7"
-              onClick={() => {
-                setAiResponse('');
-                setAiInput('');
-                setIsMinimized(true);
-              }}
-            >
-              <X className="w-3 h-3" />
-            </Button>
           </div>
         </div>
-      </div>
 
-      {/* Content Area */}
-      <div className="flex-grow p-4 overflow-hidden">
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={aiResponse ? 'response' : 'prompt'}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.3 }}
-            className="h-full flex flex-col"
-          >
-            {aiResponse ? (
-              <AiResponseVisualizer response={aiResponse} />
-            ) : (
-              <motion.div 
-                className="flex-grow flex flex-col items-center justify-center text-center space-y-4"
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-              >
-                <div className="space-y-4">
-                  <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
-                    <Bot className="w-8 h-8 text-primary" />
-                  </div>
-                  <p className="text-sm text-muted-foreground leading-relaxed">
-                    Hai! Saya AI Assistant Wukirsari. Saya bisa membantu Anda menemukan paket wisata terbaik, destinasi populer, dan informasi harga lengkap untuk perjalanan Anda.
-                  </p>
-                  
-                  <QuickSuggestions onSuggestionClick={handleSuggestionClick} />
-                </div>
-              </motion.div>
-            )}
-          </motion.div>
-        </AnimatePresence>
-      </div>
-
-      {/* Input Form */}
-      <div className="flex-shrink-0 p-4 border-t border-border/20">
-        <form onSubmit={handleAiSubmit} className="w-full">
-          <div className="relative">
-            <Input 
-              type="text" 
-              value={aiInput}
-              onChange={(e) => setAiInput(e.target.value)}
-              placeholder="Tanya tentang paket wisata, harga, atau destinasi..."
-              className="flex-grow h-10 pr-20 bg-background/70 border-border/40 focus:ring-primary/50 text-sm placeholder:text-muted-foreground/70"
-              disabled={isAiLoading}
-            />
-            <Button 
-              type="submit" 
-              size="sm" 
-              className="absolute right-1 top-1/2 -translate-y-1/2 h-7 px-3 text-xs" 
-              disabled={isAiLoading || !aiInput.trim()}
+        {/* Content Area */}
+        <div className="flex-grow p-4 overflow-hidden">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={aiResponse ? 'response' : 'prompt'}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.3 }}
+              className="h-full flex flex-col"
             >
-              {isAiLoading ? (
-                <motion.div
-                  animate={{ rotate: 360 }}
-                  transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
-                  className="w-3 h-3"
-                >
-                  <Sparkles className="w-3 h-3" />
-                </motion.div>
+              {aiResponse ? (
+                <AiResponseVisualizer 
+                  response={aiResponse} 
+                  onOrderClick={handleOrderClick}
+                />
               ) : (
-                <Send className="w-3 h-3" />
+                <motion.div 
+                  className="flex-grow flex flex-col items-center justify-center text-center space-y-4"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                >
+                  <div className="space-y-4">
+                    <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
+                      <Bot className="w-8 h-8 text-primary" />
+                    </div>
+                    <p className="text-sm text-muted-foreground leading-relaxed">
+                      Hai! Saya AI Assistant Wukirsari. Saya bisa membantu Anda menemukan paket wisata terbaik, destinasi populer, dan informasi harga lengkap untuk perjalanan Anda.
+                    </p>
+                    
+                    <QuickSuggestions onSuggestionClick={handleSuggestionClick} />
+                  </div>
+                </motion.div>
               )}
-            </Button>
-          </div>
-        </form>
-      </div>
-    </motion.div>
+            </motion.div>
+          </AnimatePresence>
+        </div>
+
+        {/* Input Form */}
+        <div className="flex-shrink-0 p-4 border-t border-border/20">
+          <form onSubmit={handleAiSubmit} className="w-full">
+            <div className="relative">
+              <Input 
+                type="text" 
+                value={aiInput}
+                onChange={(e) => setAiInput(e.target.value)}
+                placeholder="Tanya tentang paket wisata, harga, atau destinasi..."
+                className="flex-grow h-10 pr-20 bg-background/70 border-border/40 focus:ring-primary/50 text-sm placeholder:text-muted-foreground/70"
+                disabled={isAiLoading}
+              />
+              <Button 
+                type="submit" 
+                size="sm" 
+                className="absolute right-1 top-1/2 -translate-y-1/2 h-7 px-3 text-xs" 
+                disabled={isAiLoading || !aiInput.trim()}
+              >
+                {isAiLoading ? (
+                  <motion.div
+                    animate={{ rotate: 360 }}
+                    transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
+                    className="w-3 h-3"
+                  >
+                    <Sparkles className="w-3 h-3" />
+                  </motion.div>
+                ) : (
+                  <Send className="w-3 h-3" />
+                )}
+              </Button>
+            </div>
+          </form>
+        </div>
+      </motion.div>
+
+      {/* QRIS Modal */}
+      <QRISModal 
+        isOpen={showQRISModal}
+        onClose={() => setShowQRISModal(false)}
+        packageData={selectedPackage}
+      />
+    </>
   );
 };
 
