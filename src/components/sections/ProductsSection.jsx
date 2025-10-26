@@ -71,7 +71,7 @@ const products = [
     umkm: "Paguyuban Batik Giriloyo",
     price: "Rp900.000",
     imageAlt: "Batik Sungsang dengan motif abstrak dan warna cerah",
-    imageUrl: "https://horizons-cdn.hostinger.com/73e774d8-1f03-44b2-ba9c-4491a99e3f2f/5fc39e8d401246d025cbe6ff72389b49.jpg",
+    imageUrl: "sungsang.jpg",
     isNew: true,
   },
   {
@@ -96,7 +96,7 @@ const products = [
     name: "Wedang Uwuh",
     category: "Kerajinan Tangan",
     umkm: "Wedang Uwuh HJ. Jazimah",
-    price: "Rp20.000 / pcs",
+    price: "Rp20.000 / 10pcs",
     imageAlt: "Kain dan tas batik bermotif cantik tersusun rapi di rak kayu",
     imageUrl: "uwuh.jpg",
     isNew: true,
@@ -202,7 +202,7 @@ const handleWhatsAppOrder = (productName) => {
         <meta name="description" content="Jelajahi semua produk unggulan dan kerajinan tangan dari UMKM di Desa Wukirsari." />
       </Helmet>
       
-      <div className="min-h-screen bg-gradient-to-br from-background to-secondary/20 pt-24 pb-16">
+      <div  id="produk" className="min-h-screen bg-gradient-to-br from-background to-secondary/20 pt-24 pb-16">
         <div className="container mx-auto px-6">
           {/* Header Section */}
           <motion.div
