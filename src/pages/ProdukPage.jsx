@@ -1,272 +1,273 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Helmet } from 'react-helmet';
-import { motion } from 'framer-motion';
-import { ShoppingBag, ShoppingCart, MessageCircle, QrCode } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import {
+  ShoppingBag,
+  MessageCircle,
+  Search,
+  Tag,
+  Sparkles,
+  SlidersHorizontal,
+  RotateCcw,
+  ShieldCheck,
+  ChevronDown,
+  ArrowUpDown,
+} from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import MotionCard from '@/components/common/MotionCard';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@/components/ui/tabs";
-
-const products = [
-  {
-    name: "Wedang Uwuh Bu Endang",
-    category: "Kuliner",
-    umkm: "UMKM Wukirsari",
-    price: "Rp20.000 / 10pcs",
-    imageAlt: "Tiga gelas wedang uwuh hangat disajikan di atas meja",
-    imageUrl: "https://horizons-cdn.hostinger.com/73e774d8-1f03-44b2-ba9c-4491a99e3f2f/831f4e5dfdf72e4880aa6b7ee71b46b8.jpg",
-    isNew: false,
-  },
-  {
-    name: "Handmade Batik",
-    category: "Kerajinan Tangan",
-    umkm: "Handmade batik",
-    price: "Rp700.000 - Rp800.000",
-    imageAlt: "Batik tulis Giriloyo dengan motif klasik",
-    imageUrl: "https://horizons-cdn.hostinger.com/73e774d8-1f03-44b2-ba9c-4491a99e3f2f/3dd1c78d54698e2fa97c00ef157f5362.jpg",
-    isNew: false,
-  },
-  {
-    name: "Wayang Kulit Arjuna",
-    category: "Seni Pertunjukan",
-    umkm: "Ituk Wayang",
-    price: "Rp600.000",
-    imageAlt: "Wayang kulit dari Pucung",
-    imageUrl: "wayang.jpeg",
-    isNew: true,
-  },
-  {
-    name: "Kipas Tangan Zainal",
-    category: "Kerajinan Tangan",
-    umkm: "Zainal",
-    price: "Rp25.000",
-    imageAlt: "Kipas bambu dengan motif batik",
-    imageUrl: "kipas.jpg",
-    isNew: true,
-  },
-  {
-    name: "Thiwul Mbak Iswati",
-    category: "Kuliner",
-    umkm: "Mbak Iswati",
-    price: "Rp15.000 / porsi",
-    imageAlt: "Thiwul instan disajikan dengan kelapa parut",
-    imageUrl: "https://horizons-cdn.hostinger.com/73e774d8-1f03-44b2-ba9c-4491a99e3f2f/1af69d4a5467c90cf617e50609d8d0cb.jpg",
-    isNew: true,
-  },
-  {
-    name: "Batik Sungsang",
-    category: "Kerajinan Tangan",
-    umkm: "Paguyuban Batik Giriloyo",
-    price: "Rp900.000",
-    imageAlt: "Batik Sungsang dengan motif abstrak dan warna cerah",
-    imageUrl: "https://horizons-cdn.hostinger.com/73e774d8-1f03-44b2-ba9c-4491a99e3f2f/5fc39e8d401246d025cbe6ff72389b49.jpg",
-    isNew: true,
-  },
-  {
-    name: "Tatik Batik",
-    category: "Kerajinan Tangan",
-    umkm: "Paguyuban Batik Giriloyo",
-    price: "Rp900.000 - Rp. 1.500.000",
-    imageAlt: "Kain dan tas batik bermotif cantik tersusun rapi di rak kayu",
-    imageUrl: "batik-1.jpg",
-    isNew: true,
-  },
-  {
-    name: "Kampung Batik Giriloyo",
-    category: "Kerajinan Tangan",
-    umkm: "Paguyuban Batik Giriloyo",
-    price: "Rp900.000 - Rp. 2.0000.000",
-    imageAlt: "Kain dan tas batik bermotif cantik tersusun rapi di rak kayu",
-    imageUrl: "batik.jpg",
-    isNew: true,
-  },
-  {
-    name: "Wedang Uwuh",
-    category: "Kerajinan Tangan",
-    umkm: "Wedang Uwuh HJ. Jazimah",
-    price: "Rp20.000 / pcs",
-    imageAlt: "Kain dan tas batik bermotif cantik tersusun rapi di rak kayu",
-    imageUrl: "uwuh.jpg",
-    isNew: true,
-  },
-  {
-    name: "Shalsabila Batik",
-    category: "Kerajinan Tangan",
-    umkm: "Shalsabila Batik",
-    price: "Rp900.000 - 1.500.000",
-    imageAlt: "Kain dan tas batik bermotif cantik tersusun rapi di rak kayu",
-    imageUrl: "batik-2.png",
-    isNew: true,
-  },
-];
-
-const ProductCard = ({ product, onOrder }) => (
-  <MotionCard whileHover={{ scale: 1.03, transition: { duration: 0.2 } }} className="group h-full">
-    <div className="relative">
-      <div className="aspect-w-16 aspect-h-9 overflow-hidden">
-        <img className="object-cover w-full h-full transform group-hover:scale-110 transition-transform duration-500" alt={product.imageAlt} src={product.imageUrl} />
-      </div>
-      <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
-      {product.isNew && <div className="absolute top-4 left-4 bg-primary text-primary-foreground px-3 py-1 text-xs font-bold rounded-full">BARU</div>}
-    </div>
-    <div className="p-6 flex flex-col flex-grow">
-      <p className="text-sm text-primary font-semibold mb-1">{product.category}</p>
-      <h3 className="text-lg font-bold text-foreground mb-2">{product.name}</h3>
-      <p className="text-sm text-muted-foreground">Oleh {product.umkm}</p>
-      {product.price && <p className="text-base font-semibold text-foreground mt-2">{product.price}</p>}
-      <div className="mt-auto pt-4">
-        <Button onClick={() => onOrder(product)} className="w-full">
-          <ShoppingCart className="w-4 h-4 mr-2" /> Pesan Sekarang
-        </Button>
-      </div>
-    </div>
-  </MotionCard>
-);
-
-const PaymentModal = ({ product, onWhatsAppOrder }) => {
-  if (!product) return null;
-
-  return (
-    <>
-      <DialogHeader>
-        <DialogTitle>Pesan: {product.name}</DialogTitle>
-        <DialogDescription>
-          Pilih metode pembayaran atau hubungi kami via WhatsApp untuk menyelesaikan pesanan Anda.
-        </DialogDescription>
-      </DialogHeader>
-      <Tabs defaultValue="whatsapp" className="w-full mt-4">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="whatsapp" className="flex items-center justify-center">
-            <MessageCircle className="w-4 h-4 mr-2" />WhatsApp
-          </TabsTrigger>
-          <TabsTrigger value="qris" className="flex items-center justify-center">
-            <QrCode className="w-4 h-4 mr-2" />QRIS
-          </TabsTrigger>
-        </TabsList>
-        <TabsContent value="whatsapp" className="mt-4 p-4 bg-secondary/50 rounded-lg">
-          <p className="text-sm text-muted-foreground mb-4">Klik tombol di bawah untuk mengirim pesan pesanan Anda langsung ke penjual.</p>
-          <Button onClick={() => onWhatsAppOrder(product.name)} className="w-full">
-            <MessageCircle className="w-4 h-4 mr-2" /> Lanjutkan ke WhatsApp
-          </Button>
-        </TabsContent>
-        <TabsContent value="qris" className="mt-4 p-4 bg-secondary/50 rounded-lg text-center">
-          <p className="text-sm text-muted-foreground mb-4">Pindai kode QR di bawah ini menggunakan aplikasi pembayaran favorit Anda.</p>
-          <div className="flex justify-center">
-            <img className="w-48 h-48 bg-gray-300 rounded-md" alt="Contoh kode QRIS untuk pembayaran" src="qris.jpg" />
-          </div>
-          <p className="text-xs text-muted-foreground mt-2">Total: {product.price}</p>
-        </TabsContent>
-      </Tabs>
-    </>
-  );
-};
+import { Input } from '@/components/ui/input';
+import { useData } from '@/context/DataContext';
+import { ProductCard, PaymentModal } from '@/components/common/ProductCard';
 
 const ProdukPage = () => {
+  const { products, categories } = useData();
+  const [selectedCategory, setSelectedCategory] = useState('Semua');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [sortBy, setSortBy] = useState('default');
   const [selectedProduct, setSelectedProduct] = useState(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const handleOrderClick = (product) => {
-    setSelectedProduct(product);
-    setIsModalOpen(true);
+  const handleWhatsAppContact = (topic = 'Konsultasi Produk') => {
+    const phoneNumber = '628816413617';
+    const message = encodeURIComponent(`Halo WukirTech, saya ingin konsultasi mengenai: ${topic}`);
+    window.open(`https://wa.me/${phoneNumber}?text=${message}`, '_blank');
   };
 
-  const handleWhatsAppOrder = (productName) => {
-    const phoneNumber = "628816413617";
-    const message = encodeURIComponent(`Halo, saya tertarik untuk memesan produk "${productName}" dari WukirTech.`);
-    const whatsappUrl = `https://wa.me/${phoneNumber}?text=${message}`;
-    window.open(whatsappUrl, '_blank');
-    setIsModalOpen(false);
-  };
+  const filteredProducts = useMemo(() => {
+    const q = searchQuery.toLowerCase().trim();
+    let result = products.filter((item) => {
+      if (selectedCategory !== 'Semua' && item.category !== selectedCategory) {
+        return false;
+      }
+      if (!q) return true;
+      return (
+        item.name?.toLowerCase().includes(q) ||
+        item.umkm?.toLowerCase().includes(q) ||
+        item.category?.toLowerCase().includes(q) ||
+        item.description?.toLowerCase().includes(q)
+      );
+    });
+
+    if (sortBy === 'price-asc') {
+      result = [...result].sort((a, b) => (a.priceNum || 0) - (b.priceNum || 0));
+    } else if (sortBy === 'price-desc') {
+      result = [...result].sort((a, b) => (b.priceNum || 0) - (a.priceNum || 0));
+    } else if (sortBy === 'rating') {
+      result = [...result].sort((a, b) => (b.rating || 0) - (a.rating || 0));
+    }
+
+    return result;
+  }, [products, selectedCategory, searchQuery, sortBy]);
 
   return (
     <>
       <Helmet>
-        <title>Semua Produk - Desa Wukirsari</title>
-        <meta name="description" content="Jelajahi semua produk unggulan dan kerajinan tangan dari UMKM di Desa Wukirsari." />
+        <title>Galeri Produk & UMKM - Desa Wisata Wukirsari</title>
+        <meta
+          name="description"
+          content="Jelajahi semua produk unggulan, batik tulis Giriloyo, wayang kulit Pucung, kuliner khas, dan kerajinan tangan dari UMKM di Desa Wukirsari."
+        />
       </Helmet>
-      
-      <div className="min-h-screen bg-gradient-to-br from-background to-secondary/20 pt-24 pb-16">
-        <div className="container mx-auto px-6">
+
+      <div className="min-h-screen bg-gradient-to-br from-background via-secondary/15 to-background pt-24 pb-20">
+        <div className="container mx-auto px-4 md:px-6">
           {/* Header Section */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, ease: "easeOut" }}
-            className="text-center max-w-3xl mx-auto mb-16"
+            transition={{ duration: 0.6 }}
+            className="text-center max-w-3xl mx-auto mb-10"
           >
-            <div className="inline-block p-6 bg-primary/10 rounded-full mb-8">
-              <ShoppingBag className="w-16 h-16 text-primary" />
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs font-semibold mb-3">
+              <ShoppingBag className="w-4 h-4" />
+              <span>Katalog Resmi UMKM Wukirsari</span>
             </div>
-            <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-4">
-              Galeri Produk Wukirsari
+            <h1 className="text-3xl md:text-5xl font-extrabold text-foreground tracking-tight">
+              Galeri Produk <span className="text-primary">Wukirsari</span>
             </h1>
-            <p className="text-lg text-muted-foreground mb-8">
-              Temukan dan dukung karya terbaik dari para pengrajin dan UMKM Desa Wukirsari. 
-              Dari mahakarya budaya hingga produk kuliner otentik.
-            </p>
-            <div className="flex justify-center gap-2">
-              <span className="px-3 py-1 bg-primary/20 text-primary rounded-full text-sm font-medium">Kerajinan Tangan</span>
-              <span className="px-3 py-1 bg-primary/20 text-primary rounded-full text-sm font-medium">Kuliner</span>
-              <span className="px-3 py-1 bg-primary/20 text-primary rounded-full text-sm font-medium">Seni Pertunjukan</span>
-            </div>
           </motion.div>
 
-          {/* Products Grid */}
-          <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.8, delay: 0.2 }}
-              className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8"
-            >
-              {products.map((product, index) => (
-                <DialogTrigger key={product.name} asChild>
-                  <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.5, delay: index * 0.1 }}
-                    onClick={() => handleOrderClick(product)}
+          {/* Compact Professional Search & Dropdown Filter Toolbar */}
+          <div className="max-w-4xl mx-auto mb-8">
+            <div className="flex flex-col sm:flex-row items-center gap-2.5 bg-card/80 p-2 sm:p-2.5 rounded-2xl border border-border/30 backdrop-blur-xl shadow-sm">
+              {/* Search Input */}
+              <div className="relative flex-grow w-full">
+                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  type="text"
+                  placeholder="Cari batik, wayang, wedang uwuh, kuliner..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-9 pr-8 h-10 text-xs md:text-sm bg-background/60 border-border/30 rounded-xl focus-visible:ring-primary"
+                />
+                {searchQuery && (
+                  <button
+                    onClick={() => setSearchQuery('')}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground hover:text-foreground p-0.5"
+                    title="Hapus pencarian"
                   >
-                    <ProductCard product={product} onOrder={() => {}} />
-                  </motion.div>
-                </DialogTrigger>
-              ))}
-            </motion.div>
-            <DialogContent className="max-w-md">
-              <PaymentModal product={selectedProduct} onWhatsAppOrder={handleWhatsAppOrder} />
-            </DialogContent>
-          </Dialog>
+                    ✕
+                  </button>
+                )}
+              </div>
 
-          {/* Info Section */}
+              {/* Category Dropdown Filter */}
+              <div className="relative w-full sm:w-56 flex-shrink-0">
+                <SlidersHorizontal className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
+                <select
+                  value={selectedCategory}
+                  onChange={(e) => setSelectedCategory(e.target.value)}
+                  className="w-full h-10 pl-9 pr-8 text-xs md:text-sm rounded-xl border border-border/30 bg-background/60 text-foreground appearance-none cursor-pointer focus:outline-none focus:ring-1 focus:ring-primary font-medium transition-colors"
+                >
+                  <option value="Semua">Semua Kategori ({products.length})</option>
+                  {categories.map((cat) => {
+                    const count = products.filter((p) => p.category === cat.name).length;
+                    return (
+                      <option key={cat.id} value={cat.name}>
+                        {cat.name} ({count})
+                      </option>
+                    );
+                  })}
+                </select>
+                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+              </div>
+
+              {/* Sort Dropdown */}
+              <div className="relative w-full sm:w-44 flex-shrink-0">
+                <ArrowUpDown className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
+                <select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value)}
+                  className="w-full h-10 pl-9 pr-8 text-xs md:text-sm rounded-xl border border-border/30 bg-background/60 text-foreground appearance-none cursor-pointer focus:outline-none focus:ring-1 focus:ring-primary font-medium transition-colors"
+                >
+                  <option value="default">Urutkan: Bawaan</option>
+                  <option value="price-asc">Harga: Termurah</option>
+                  <option value="price-desc">Harga: Termahal</option>
+                  <option value="rating">Rating Tertinggi</option>
+                </select>
+                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+              </div>
+
+              {/* Reset Filter Button */}
+              {(selectedCategory !== 'Semua' || searchQuery || sortBy !== 'default') && (
+                <Button
+                  onClick={() => {
+                    setSelectedCategory('Semua');
+                    setSearchQuery('');
+                    setSortBy('default');
+                  }}
+                  variant="ghost"
+                  size="icon"
+                  className="h-10 w-10 text-muted-foreground hover:text-primary hover:bg-secondary rounded-xl flex-shrink-0"
+                  title="Reset Filter"
+                >
+                  <RotateCcw className="w-3.5 h-3.5" />
+                </Button>
+              )}
+            </div>
+          </div>
+
+          {/* Results Summary */}
+          <div className="max-w-6xl mx-auto mb-6 flex items-center justify-between text-xs text-muted-foreground px-2">
+            <div>
+              Menampilkan <strong className="text-foreground">{filteredProducts.length}</strong> dari{' '}
+              <strong className="text-foreground">{products.length}</strong> total produk
+              {selectedCategory !== 'Semua' && (
+                <> dalam kategori <span className="text-primary font-medium">{selectedCategory}</span></>
+              )}
+            </div>
+
+            {(selectedCategory !== 'Semua' || searchQuery || sortBy !== 'default') && (
+              <button
+                onClick={() => {
+                  setSelectedCategory('Semua');
+                  setSearchQuery('');
+                  setSortBy('default');
+                }}
+                className="text-primary hover:underline flex items-center gap-1 font-semibold"
+              >
+                <RotateCcw className="w-3 h-3" /> Reset Filter
+              </button>
+            )}
+          </div>
+
+          {/* Products Grid */}
+          <div className="max-w-6xl mx-auto">
+            {filteredProducts.length > 0 ? (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
+              >
+                {filteredProducts.map((product) => (
+                  <motion.div
+                    key={product.id}
+                    initial={{ opacity: 0, y: 15 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3 }}
+                  >
+                    <ProductCard
+                      product={product}
+                      onSelect={(p) => setSelectedProduct(p)}
+                    />
+                  </motion.div>
+                ))}
+              </motion.div>
+            ) : (
+              <div className="text-center py-16 bg-card/40 rounded-3xl border border-dashed border-border/50 max-w-lg mx-auto">
+                <ShoppingBag className="w-12 h-12 text-muted-foreground mx-auto mb-3 opacity-60" />
+                <h3 className="text-base font-bold text-foreground mb-1">
+                  Tidak Ada Produk yang Cocok
+                </h3>
+                <p className="text-xs text-muted-foreground mb-4">
+                  Coba ganti kata kunci atau pilih kategori lain.
+                </p>
+                <Button
+                  onClick={() => {
+                    setSelectedCategory('Semua');
+                    setSearchQuery('');
+                  }}
+                  variant="outline"
+                  size="sm"
+                  className="text-xs"
+                >
+                  Lihat Semua Produk
+                </Button>
+              </div>
+            )}
+          </div>
+
+          {/* Help & Consultation Section */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.4 }}
-            className="text-center mt-16 p-8 bg-card/50 rounded-2xl border border-border/20"
+            transition={{ duration: 0.6, delay: 0.2 }}
+            className="text-center mt-20 max-w-3xl mx-auto p-8 bg-card/60 rounded-3xl border border-border/30 backdrop-blur-md"
           >
-            <h3 className="text-2xl font-bold text-foreground mb-4">Butuh Bantuan?</h3>
-            <p className="text-muted-foreground mb-6">
-              Tim kami siap membantu Anda dalam memilih produk yang tepat atau menjawab pertanyaan seputar produk UMKM Wukirsari.
+            <h3 className="text-xl md:text-2xl font-bold text-foreground mb-3">
+              Butuh Pesanan Khusus atau Bantuan?
+            </h3>
+            <p className="text-xs md:text-sm text-muted-foreground mb-6">
+              Tim WukirTech dan pengurus paguyuban siap membantu pesanan seragam batik, souvenir dalam jumlah besar,
+              ataupun paket workshop edukasi budaya.
             </p>
-            <Button onClick={() => handleWhatsAppOrder("Konsultasi Produk")} size="lg">
+            <Button
+              onClick={() => handleWhatsAppContact('Pesanan Khusus / Souvenir UMKM')}
+              size="lg"
+              className="bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-sm rounded-xl px-6"
+            >
               <MessageCircle className="w-5 h-5 mr-2" />
-              Konsultasi via WhatsApp
+              Konsultasi via WhatsApp Resmi
             </Button>
           </motion.div>
         </div>
       </div>
+
+      {/* Payment / Ordering Modal */}
+      <PaymentModal
+        product={selectedProduct}
+        isOpen={Boolean(selectedProduct)}
+        onClose={() => setSelectedProduct(null)}
+      />
     </>
   );
 };

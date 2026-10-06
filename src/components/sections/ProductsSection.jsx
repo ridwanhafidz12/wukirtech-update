@@ -1,279 +1,111 @@
 import React, { useState } from 'react';
-import { Helmet } from 'react-helmet';
 import { motion } from 'framer-motion';
-import { ShoppingBag, ShoppingCart, MessageCircle, QrCode } from 'lucide-react';
+import { ShoppingBag, ArrowRight, Sparkles, MessageCircle, Search } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import MotionCard from '@/components/common/MotionCard';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@/components/ui/tabs";
+import { useData } from '@/context/DataContext';
+import { ProductCard, PaymentModal } from '@/components/common/ProductCard';
 
-const products = [
-  {
-    name: "Wedang Uwuh Bu Endang",
-    category: "Kuliner",
-    umkm: "UMKM Wukirsari",
-    price: "Rp20.000 / 10pcs",
-    imageAlt: "Tiga gelas wedang uwuh hangat disajikan di atas meja",
-    imageUrl: "https://horizons-cdn.hostinger.com/73e774d8-1f03-44b2-ba9c-4491a99e3f2f/831f4e5dfdf72e4880aa6b7ee71b46b8.jpg",
-    isNew: false,
-  },
-  {
-    name: "Handmade Batik",
-    category: "Kerajinan Tangan",
-    umkm: "Handmade batik",
-    price: "Rp700.000 - Rp800.000",
-    imageAlt: "Batik tulis Giriloyo dengan motif klasik",
-    imageUrl: "https://horizons-cdn.hostinger.com/73e774d8-1f03-44b2-ba9c-4491a99e3f2f/3dd1c78d54698e2fa97c00ef157f5362.jpg",
-    isNew: false,
-  },
-  {
-    name: "Wayang Kulit Arjuna",
-    category: "Seni Pertunjukan",
-    umkm: "Ituk Wayang",
-    price: "Rp600.000",
-    imageAlt: "Wayang kulit dari Pucung",
-    imageUrl: "wayang.jpeg",
-    isNew: true,
-  },
-  {
-    name: "Kipas Tangan Zainal",
-    category: "Kerajinan Tangan",
-    umkm: "Zainal",
-    price: "Rp25.000",
-    imageAlt: "Kipas bambu dengan motif batik",
-    imageUrl: "kipas.jpg",
-    isNew: true,
-  },
-  {
-    name: "Thiwul Mbak Iswati",
-    category: "Kuliner",
-    umkm: "Mbak Iswati",
-    price: "Rp15.000 / porsi",
-    imageAlt: "Thiwul instan disajikan dengan kelapa parut",
-    imageUrl: "https://horizons-cdn.hostinger.com/73e774d8-1f03-44b2-ba9c-4491a99e3f2f/1af69d4a5467c90cf617e50609d8d0cb.jpg",
-    isNew: true,
-  },
-  {
-    name: "Batik Sungsang",
-    category: "Kerajinan Tangan",
-    umkm: "Paguyuban Batik Giriloyo",
-    price: "Rp900.000",
-    imageAlt: "Batik Sungsang dengan motif abstrak dan warna cerah",
-    imageUrl: "sungsang.jpg",
-    isNew: true,
-  },
-  {
-    name: "Tatik Batik",
-    category: "Kerajinan Tangan",
-    umkm: "Paguyuban Batik Giriloyo",
-    price: "Rp900.000 - Rp. 1.500.000",
-    imageAlt: "Kain dan tas batik bermotif cantik tersusun rapi di rak kayu",
-    imageUrl: "batik-1.jpg",
-    isNew: true,
-  },
-  {
-    name: "Kampung Batik Giriloyo",
-    category: "Kerajinan Tangan",
-    umkm: "Paguyuban Batik Giriloyo",
-    price: "Rp900.000 - Rp. 2.0000.000",
-    imageAlt: "Kain dan tas batik bermotif cantik tersusun rapi di rak kayu",
-    imageUrl: "batik.jpg",
-    isNew: true,
-  },
-  {
-    name: "Wedang Uwuh",
-    category: "Kerajinan Tangan",
-    umkm: "Wedang Uwuh HJ. Jazimah",
-    price: "Rp20.000 / 10pcs",
-    imageAlt: "Kain dan tas batik bermotif cantik tersusun rapi di rak kayu",
-    imageUrl: "uwuh.jpg",
-    isNew: true,
-  },
-  {
-    name: "Shalsabila Batik",
-    category: "Kerajinan Tangan",
-    umkm: "Shalsabila Batik",
-    price: "Rp900.000 - 1.500.000",
-    imageAlt: "Kain dan tas batik bermotif cantik tersusun rapi di rak kayu",
-    imageUrl: "batik-2.png",
-    isNew: true,
-  },
-];
-
-const ProductCard = ({ product, onOrder }) => (
-  <MotionCard whileHover={{ scale: 1.03, transition: { duration: 0.2 } }} className="group h-full">
-    <div className="relative">
-      <div className="aspect-w-16 aspect-h-9 overflow-hidden">
-        <img className="object-cover w-full h-full transform group-hover:scale-110 transition-transform duration-500" alt={product.imageAlt} src={product.imageUrl} />
-      </div>
-      <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
-      {product.isNew && <div className="absolute top-4 left-4 bg-primary text-primary-foreground px-3 py-1 text-xs font-bold rounded-full">BARU</div>}
-    </div>
-    <div className="p-6 flex flex-col flex-grow">
-      <p className="text-sm text-primary font-semibold mb-1">{product.category}</p>
-      <h3 className="text-lg font-bold text-foreground mb-2">{product.name}</h3>
-      <p className="text-sm text-muted-foreground">Oleh {product.umkm}</p>
-      {product.price && <p className="text-base font-semibold text-foreground mt-2">{product.price}</p>}
-      <div className="mt-auto pt-4">
-        <Button onClick={() => onOrder(product)} className="w-full">
-          <ShoppingCart className="w-4 h-4 mr-2" /> Pesan Sekarang
-        </Button>
-      </div>
-    </div>
-  </MotionCard>
-);
-
-const PaymentModal = ({ product, onWhatsAppOrder }) => {
-  if (!product) return null;
-
-  return (
-    <>
-      <DialogHeader>
-        <DialogTitle>Pesan: {product.name}</DialogTitle>
-        <DialogDescription>
-          Pilih metode pembayaran atau hubungi kami via WhatsApp untuk menyelesaikan pesanan Anda.
-        </DialogDescription>
-      </DialogHeader>
-      <Tabs defaultValue="whatsapp" className="w-full mt-4">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="whatsapp" className="flex items-center justify-center">
-            <MessageCircle className="w-4 h-4 mr-2" />WhatsApp
-          </TabsTrigger>
-          <TabsTrigger value="qris" className="flex items-center justify-center">
-            <QrCode className="w-4 h-4 mr-2" />QRIS
-          </TabsTrigger>
-        </TabsList>
-        <TabsContent value="whatsapp" className="mt-4 p-4 bg-secondary/50 rounded-lg">
-          <p className="text-sm text-muted-foreground mb-4">Klik tombol di bawah untuk mengirim pesan pesanan Anda langsung ke penjual.</p>
-          <Button onClick={() => onWhatsAppOrder(product.name)} className="w-full">
-            <MessageCircle className="w-4 h-4 mr-2" /> Lanjutkan ke WhatsApp
-          </Button>
-        </TabsContent>
-        <TabsContent value="qris" className="mt-4 p-4 bg-secondary/50 rounded-lg text-center">
-          <p className="text-sm text-muted-foreground mb-4">Pindai kode QR di bawah ini menggunakan aplikasi pembayaran favorit Anda.</p>
-          <div className="flex justify-center">
-            <img className="w-48 h-48 bg-gray-300 rounded-md" alt="Contoh kode QRIS untuk pembayaran" src="qris.jpg" />
-          </div>
-          <p className="text-xs text-muted-foreground mt-2">Total: {product.price}</p>
-        </TabsContent>
-      </Tabs>
-    </>
-  );
-};
-
-const ProdukPage = () => {
+const ProductsSection = () => {
+  const { products, categories } = useData();
+  const [selectedCategory, setSelectedCategory] = useState('Semua');
   const [selectedProduct, setSelectedProduct] = useState(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const handleOrderClick = (product) => {
-    setSelectedProduct(product);
-    setIsModalOpen(true);
+  const displayedProducts = products
+    .filter((p) => selectedCategory === 'Semua' || p.category === selectedCategory)
+    .slice(0, 8);
+
+  const handleWhatsAppContact = () => {
+    const phoneNumber = '628816413617';
+    const message = encodeURIComponent('Halo WukirTech, saya ingin konsultasi mengenai produk UMKM Wukirsari.');
+    window.open(`https://wa.me/${phoneNumber}?text=${message}`, '_blank');
   };
 
-const handleWhatsAppOrder = (productName) => {
-  const phoneNumber = "628816413617";
-  const message = encodeURIComponent(`Halo, saya tertarik untuk memesan produk "${productName}" dari WukirTech.`);
-  const whatsappUrl = `https://wa.me/${phoneNumber}?text=${message}`;
-
-  // Aman jika dipanggil lewat event klik user
-  const newTab = window.open(whatsappUrl, '_blank', 'noopener,noreferrer');
-  if (!newTab) window.location.href = whatsappUrl;
-
-  setIsModalOpen(false);
-};
-
-
   return (
-    <>
-      <Helmet>
-        <title>Semua Produk - Desa Wukirsari</title>
-        <meta name="description" content="Jelajahi semua produk unggulan dan kerajinan tangan dari UMKM di Desa Wukirsari." />
-      </Helmet>
-      
-      <div  id="produk" className="min-h-screen bg-gradient-to-br from-background to-secondary/20 pt-24 pb-16">
-        <div className="container mx-auto px-6">
-          {/* Header Section */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, ease: "easeOut" }}
-            className="text-center max-w-3xl mx-auto mb-16"
-          >
-            <div className="inline-block p-6 bg-primary/10 rounded-full mb-8">
-              <ShoppingBag className="w-16 h-16 text-primary" />
-            </div>
-            <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-4">
-              Galeri Produk Wukirsari
-            </h1>
-            <p className="text-lg text-muted-foreground mb-8">
-              Temukan dan dukung karya terbaik dari para pengrajin dan UMKM Desa Wukirsari. 
-              Dari mahakarya budaya hingga produk kuliner otentik.
-            </p>
-            <div className="flex justify-center gap-2">
-              <span className="px-3 py-1 bg-primary/20 text-primary rounded-full text-sm font-medium">Kerajinan Tangan</span>
-              <span className="px-3 py-1 bg-primary/20 text-primary rounded-full text-sm font-medium">Kuliner</span>
-              <span className="px-3 py-1 bg-primary/20 text-primary rounded-full text-sm font-medium">Seni Pertunjukan</span>
-            </div>
-          </motion.div>
+    <section id="produk" className="py-20 md:py-28 bg-gradient-to-b from-background via-secondary/15 to-background">
+      <div className="container mx-auto px-4 md:px-6">
+        {/* Header */}
+        <div className="text-center max-w-3xl mx-auto mb-12">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs font-semibold mb-3">
+            <ShoppingBag className="w-3.5 h-3.5" />
+            <span>Karya Autentik Wukirsari</span>
+          </div>
+          <h2 className="text-3xl md:text-4xl font-extrabold text-foreground tracking-tight mb-3">
+            Produk Unggulan <span className="text-primary">UMKM Desa</span>
+          </h2>
+          <p className="text-sm md:text-base text-muted-foreground">
+            Dukung ekonomi lokal desa dengan memiliki mahakarya batik tulis berkelas dunia,
+            tatah sungging wayang kulit, dan nikmatnya minuman rempah alami.
+          </p>
 
-          {/* Products Grid */}
-          <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.8, delay: 0.2 }}
-              className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8"
+          {/* Dynamic Category Chips */}
+          <div className="flex items-center justify-center flex-wrap gap-2 mt-6">
+            <button
+              onClick={() => setSelectedCategory('Semua')}
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all border ${
+                selectedCategory === 'Semua'
+                  ? 'bg-primary text-primary-foreground border-primary shadow-sm'
+                  : 'bg-card/70 hover:bg-secondary text-muted-foreground border-border/30'
+              }`}
             >
-              {products.map((product, index) => (
-                <DialogTrigger key={product.name} asChild>
-                  <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.5, delay: index * 0.1 }}
-                    onClick={() => handleOrderClick(product)}
-                  >
-                    <ProductCard product={product} onOrder={() => {}} />
-                  </motion.div>
-                </DialogTrigger>
-              ))}
-            </motion.div>
-            <DialogContent className="max-w-md">
-              <PaymentModal product={selectedProduct} onWhatsAppOrder={handleWhatsAppOrder} />
-            </DialogContent>
-          </Dialog>
+              Semua ({products.length})
+            </button>
+            {categories.slice(0, 5).map((cat) => (
+              <button
+                key={cat.id}
+                onClick={() => setSelectedCategory(cat.name)}
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all border ${
+                  selectedCategory === cat.name
+                    ? 'bg-primary text-primary-foreground border-primary shadow-sm'
+                    : 'bg-card/70 hover:bg-secondary text-muted-foreground border-border/30'
+                }`}
+              >
+                {cat.name}
+              </button>
+            ))}
+          </div>
+        </div>
 
-          {/* Info Section */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.4 }}
-            className="text-center mt-16 p-8 bg-card/50 rounded-2xl border border-border/20"
-          >
-            <h3 className="text-2xl font-bold text-foreground mb-4">Butuh Bantuan?</h3>
-            <p className="text-muted-foreground mb-6">
-              Tim kami siap membantu Anda dalam memilih produk yang tepat atau menjawab pertanyaan seputar produk UMKM Wukirsari.
-            </p>
-            <Button onClick={() => handleWhatsAppOrder("Konsultasi Produk")} size="lg">
-              <MessageCircle className="w-5 h-5 mr-2" />
-              Konsultasi via WhatsApp
+        {/* Products Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl mx-auto mb-12">
+          {displayedProducts.map((product) => (
+            <motion.div
+              key={product.id}
+              initial={{ opacity: 0, y: 15 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.3 }}
+            >
+              <ProductCard
+                product={product}
+                onSelect={(p) => setSelectedProduct(p)}
+              />
+            </motion.div>
+          ))}
+        </div>
+
+        {/* Bottom Navigation CTA */}
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+          <Link to="/produk">
+            <Button size="lg" className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold px-6 rounded-xl">
+              Lihat Semua Katalog ({products.length}) <ArrowRight className="w-4 h-4 ml-2" />
             </Button>
-          </motion.div>
+          </Link>
+          <Link to="/cari">
+            <Button size="lg" variant="outline" className="px-6 rounded-xl border-border/50">
+              <Search className="w-4 h-4 mr-2 text-primary" /> Cari Spesifik
+            </Button>
+          </Link>
         </div>
       </div>
-    </>
+
+      <PaymentModal
+        product={selectedProduct}
+        isOpen={Boolean(selectedProduct)}
+        onClose={() => setSelectedProduct(null)}
+      />
+    </section>
   );
 };
 
-export default ProdukPage;
+export default ProductsSection;
