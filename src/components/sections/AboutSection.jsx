@@ -26,19 +26,19 @@ const AboutSection = () => {
   };
 
   return (
-    <section id="tentang" className="py-20 md:py-32 bg-secondary/30">
-      <div className="container mx-auto px-6">
-        <div className="grid lg:grid-cols-2 gap-12 items-center">
+    <section id="tentang" className="py-12 md:py-20 bg-secondary/30">
+      <div className="container mx-auto px-4 md:px-6 max-w-6xl">
+        <div className="grid lg:grid-cols-2 gap-8 md:gap-12 items-center">
           <MotionCard>
-            <div className="aspect-w-16 aspect-h-10">
-              <img className="object-cover w-full h-full" alt="Tim WukirTech berdiskusi dengan pelaku UMKM di Wukirsari" src="sawah.jpg" />
+            <div className="aspect-[16/10] rounded-2xl overflow-hidden border border-border/30">
+              <img className="object-cover w-full h-full" alt="Suasana persawahan dan UMKM di Wukirsari" src="/sawah.jpg" />
             </div>
           </MotionCard>
-          <motion.div initial={{ opacity: 0, x: 50 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ duration: 0.8 }}>
-            <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-6">Pelopor Digitalisasi Desa Wisata</h2>
-            <p className="text-muted-foreground mb-4">WukirTech lahir sebagai solusi untuk mengangkat potensi Desa Wisata Wukirsari ke panggung dunia. Kami bukan hanya media promosi, tetapi sebuah pasar digital khusus yang menjembatani wisatawan dengan kekayaan desa.</p>
-            <p className="text-muted-foreground mb-8">Dengan kemitraan strategis bersama Pemerintah Desa Wukirsari dan lebih dari 100 UMKM, kami berkomitmen mendorong transformasi digital dan pertumbuhan ekonomi lokal secara masif dan terstruktur.</p>
-            <div className="flex items-center gap-4">
+          <motion.div initial={{ opacity: 0, x: 30 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ duration: 0.6 }}>
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-foreground mb-4">Digitalisasi Desa Wisata Wukirsari</h2>
+            <p className="text-sm md:text-base text-muted-foreground mb-3 leading-relaxed">WukirTech menjembatani wisatawan dengan potensi Desa Wisata Wukirsari—mulai dari destinasi sejarah, agenda budaya, hingga karya UMKM warga.</p>
+            <p className="text-sm md:text-base text-muted-foreground mb-6 leading-relaxed">Bermitra dengan Pemerintah Kalurahan Wukirsari dan lebih dari 100 UMKM lokal untuk memperluas akses pasar dan informasi wisata.</p>
+            <div className="flex flex-wrap items-center gap-3">
               <Button onClick={handlePelajariClick}>Pelajari Lebih Lanjut</Button>
               <Button onClick={handleHubungiClick} variant="ghost">Hubungi Kami <ArrowRight className="w-4 h-4 ml-2" /></Button>
             </div>

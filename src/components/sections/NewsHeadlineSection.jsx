@@ -28,42 +28,26 @@ const NewsHeadlineSection = () => {
   const featuredArticle = articles[activeIndex] || articles[0];
 
   return (
-    <section id="berita" className="py-16 md:py-24 bg-gradient-to-b from-background via-primary/5 to-background relative overflow-hidden">
+    <section id="berita" className="py-12 md:py-20 bg-gradient-to-b from-background via-primary/5 to-background relative overflow-hidden">
       <div className="container mx-auto px-4 md:px-6 max-w-7xl">
-        {/* Breaking News Ticker Bar */}
-        <div className="mb-10 bg-card/90 border border-primary/30 rounded-2xl p-2.5 md:p-3 shadow-lg backdrop-blur-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-          <div className="flex items-center gap-2.5 min-w-0">
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-primary text-primary-foreground text-xs font-extrabold uppercase tracking-wider flex-shrink-0 shadow-sm">
-              <Flame className="w-3.5 h-3.5 animate-pulse" />
-              Headline Budaya
-            </span>
-            <p className="text-xs md:text-sm font-semibold text-foreground truncate">
-              Sorotan Utama: Tradisi Sakral <span className="text-primary">Nguras Enceh Makam Raja Imogiri</span> &amp; Kemeriahan <span className="text-primary">Kirab Budaya Hari Lahir Kalurahan Wukirsari</span>
-            </p>
-          </div>
-          <Link to="/agenda" className="text-xs font-bold text-primary hover:underline flex items-center gap-1 flex-shrink-0 self-end sm:self-auto">
-            Lihat Jadwal Kalender <ArrowRight className="w-3.5 h-3.5" />
-          </Link>
-        </div>
-
         {/* Section Header */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between mb-10 gap-4">
+        <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 gap-3">
           <div>
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-primary/10 border border-primary/25 text-primary text-xs font-semibold mb-3">
-              <Newspaper className="w-4 h-4" />
-              <span>Warta &amp; Tradisi Agung Wukirsari</span>
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/25 text-primary text-xs font-semibold mb-2.5">
+              <Newspaper className="w-3.5 h-3.5" />
+              <span>Warta Budaya Wukirsari</span>
             </div>
-            <h2 className="text-3xl md:text-5xl font-extrabold text-foreground tracking-tight">
-              Headline Berita <span className="text-primary">&amp; Pusaka Budaya</span>
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-foreground tracking-tight">
+              Headline Berita <span className="text-primary">&amp; Tradisi</span>
             </h2>
           </div>
-          <p className="text-sm text-muted-foreground max-w-md">
-            Mengenal lebih dekat dua perayaan adat terbesar di Kalurahan Wukirsari, Imogiri yang telah diwariskan lintas generasi dan menjadi magnet wisata budaya dunia.
+          <p className="text-xs sm:text-sm text-muted-foreground max-w-md">
+            Dua perayaan adat utama di Kalurahan Wukirsari yang diwariskan lintas generasi.
           </p>
         </div>
 
         {/* Main Featured Headline & Side Switcher Cards */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
           {/* Left: Big Featured Story (7 cols) */}
           <div className="lg:col-span-7 flex">
             <AnimatePresence mode="wait">
@@ -214,24 +198,20 @@ const NewsHeadlineSection = () => {
               );
             })}
 
-            {/* Info Box Tradisi Wukirsari */}
-            <div className="bg-card/70 border border-border/40 rounded-3xl p-5 backdrop-blur-md">
-              <h4 className="text-sm font-extrabold text-foreground mb-1.5 flex items-center gap-2">
-                <Sparkles className="w-4 h-4 text-primary" />
-                Ingin Menyaksikan Langsung Tradisi Ini?
-              </h4>
-              <p className="text-xs text-muted-foreground leading-relaxed mb-3">
-                Wisatawan dapat mengikuti prosesi Kirab Siwur Nguras Enceh di Pajimatan Imogiri maupun Kirab Budaya Agung Hari Lahir Kalurahan Wukirsari dengan memesan paket wisata budaya atau melihat jadwal lengkapnya di halaman Agenda Desa.
-              </p>
+            {/* Quick Links */}
+            <div className="bg-card/70 border border-border/40 rounded-2xl p-4 flex flex-wrap items-center justify-between gap-2">
+              <span className="text-xs font-semibold text-foreground">
+                Lihat jadwal &amp; paket wisata budaya:
+              </span>
               <div className="flex flex-wrap gap-2">
                 <Link to="/agenda">
                   <Button size="sm" variant="outline" className="h-8 text-xs rounded-xl border-primary/40 text-primary">
-                    Buka Kalender Budaya
+                    Kalender Budaya
                   </Button>
                 </Link>
                 <Link to="/produk?cat=Jasa%20%26%20Budaya">
                   <Button size="sm" className="h-8 text-xs rounded-xl">
-                    Lihat Paket Wisata Sejarah
+                    Paket Wisata
                   </Button>
                 </Link>
               </div>

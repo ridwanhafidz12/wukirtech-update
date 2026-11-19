@@ -4,6 +4,7 @@ import Hero from '@/components/sections/Hero';
 import NewsHeadlineSection from '@/components/sections/NewsHeadlineSection';
 import AgendaBudayaSection from '@/components/sections/AgendaBudayaSection';
 import DashboardSection from '@/components/sections/DashboardSection';
+import ReviewsStatsSection from '@/components/sections/ReviewsStatsSection';
 import InteractiveMapSection from '@/components/sections/InteractiveMapSection';
 import AiPlannerSection from '@/components/sections/AiPlannerSection';
 import ProductsSection from '@/components/sections/ProductsSection';
@@ -32,6 +33,7 @@ const HomePage = () => {
       <NewsHeadlineSection />
       <AgendaBudayaSection />
       <DashboardSection />
+      <ReviewsStatsSection />
       <InteractiveMapSection />
       <AiPlannerSection />
       <ProductsSection /> 

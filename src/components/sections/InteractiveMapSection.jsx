@@ -284,30 +284,29 @@ const InteractiveMapSection = () => {
   };
 
   return (
-    <section id="destinasi" className="py-20 md:py-28 bg-gradient-to-b from-background via-secondary/10 to-background">
+    <section id="destinasi" className="py-12 md:py-20 bg-gradient-to-b from-background via-secondary/10 to-background">
       <div className="container mx-auto px-4 md:px-6 max-w-7xl">
         {/* Section Header */}
-        <div className="text-center max-w-3xl mx-auto mb-12">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-primary/10 border border-primary/25 text-primary text-xs font-semibold mb-3 backdrop-blur-md">
-            <Compass className="w-4 h-4" />
-            <span>Peta Digital Resmi Wisata Wukirsari</span>
+        <div className="text-center max-w-2xl mx-auto mb-8 md:mb-10">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/25 text-primary text-xs font-semibold mb-2.5 backdrop-blur-md">
+            <Compass className="w-3.5 h-3.5" />
+            <span>Peta Wisata Wukirsari</span>
           </div>
-          <h2 className="text-3xl md:text-5xl font-extrabold text-foreground tracking-tight mb-4">
-            Jelajahi Peta Interaktif <span className="text-primary">Desa Wukirsari</span>
+          <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-foreground tracking-tight mb-2.5">
+            Peta Interaktif <span className="text-primary">Desa Wukirsari</span>
           </h2>
-          <p className="text-sm md:text-base text-muted-foreground">
-            Temukan titik sentra kerajinan batik tulis, wayang kulit, bukit pemandangan alam, dan kuliner tradisional
-            otentik secara langsung dengan navigasi presisi.
+          <p className="text-xs sm:text-sm text-muted-foreground">
+            Jelajahi lokasi wisata sejarah, sentra kerajinan, kuliner, dan panorama alam dengan navigasi langsung.
           </p>
         </div>
 
         {/* Map Container & Control Card */}
-        <div className="bg-card/80 border border-border/40 rounded-3xl p-4 md:p-6 shadow-2xl backdrop-blur-xl">
+        <div className="bg-card/80 border border-border/40 rounded-2xl md:rounded-3xl p-3.5 md:p-6 shadow-2xl backdrop-blur-xl">
           {/* Top Toolbar: Category Chips & Layer Selector */}
-          <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-4 mb-4 pb-4 border-b border-border/20">
+          <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3 mb-4 pb-3 border-b border-border/20">
             {/* Category Filter Chips */}
-            <div className="flex items-center flex-wrap gap-1.5">
-              <span className="text-xs font-semibold text-muted-foreground mr-1 flex items-center gap-1">
+            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 sm:flex-wrap">
+              <span className="text-xs font-semibold text-muted-foreground mr-1 flex items-center gap-1 flex-shrink-0">
                 <MapPin className="w-3.5 h-3.5 text-primary" /> Kategori:
               </span>
               {categories.map((cat) => (
@@ -317,7 +316,7 @@ const InteractiveMapSection = () => {
                     setSelectedCategory(cat);
                     setActiveLocation(null);
                   }}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all border ${
+                  className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all border whitespace-nowrap flex-shrink-0 ${
                     selectedCategory === cat
                       ? 'bg-primary text-primary-foreground border-primary shadow-sm'
                       : 'bg-background/60 hover:bg-secondary text-muted-foreground border-border/30'

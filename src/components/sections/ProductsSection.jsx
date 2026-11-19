@@ -22,27 +22,26 @@ const ProductsSection = () => {
   };
 
   return (
-    <section id="produk" className="py-20 md:py-28 bg-gradient-to-b from-background via-secondary/15 to-background">
+    <section id="produk" className="py-12 md:py-20 bg-gradient-to-b from-background via-secondary/15 to-background">
       <div className="container mx-auto px-4 md:px-6">
         {/* Header */}
-        <div className="text-center max-w-3xl mx-auto mb-12">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs font-semibold mb-3">
+        <div className="text-center max-w-2xl mx-auto mb-10">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs font-semibold mb-2.5">
             <ShoppingBag className="w-3.5 h-3.5" />
-            <span>Karya Autentik Wukirsari</span>
+            <span>Karya UMKM Wukirsari</span>
           </div>
-          <h2 className="text-3xl md:text-4xl font-extrabold text-foreground tracking-tight mb-3">
+          <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-foreground tracking-tight mb-2.5">
             Produk Unggulan <span className="text-primary">UMKM Desa</span>
           </h2>
-          <p className="text-sm md:text-base text-muted-foreground">
-            Dukung ekonomi lokal desa dengan memiliki mahakarya batik tulis berkelas dunia,
-            tatah sungging wayang kulit, dan nikmatnya minuman rempah alami.
+          <p className="text-xs sm:text-sm text-muted-foreground">
+            Batik tulis Giriloyo, wayang kulit Pucung, kuliner khas, dan paket wisata langsung dari pengrajin lokal.
           </p>
 
           {/* Dynamic Category Chips */}
-          <div className="flex items-center justify-center flex-wrap gap-2 mt-6">
+          <div className="flex items-center sm:justify-center gap-2 mt-5 overflow-x-auto pb-1 sm:flex-wrap">
             <button
               onClick={() => setSelectedCategory('Semua')}
-              className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all border ${
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all border whitespace-nowrap flex-shrink-0 ${
                 selectedCategory === 'Semua'
                   ? 'bg-primary text-primary-foreground border-primary shadow-sm'
                   : 'bg-card/70 hover:bg-secondary text-muted-foreground border-border/30'
@@ -54,7 +53,7 @@ const ProductsSection = () => {
               <button
                 key={cat.id}
                 onClick={() => setSelectedCategory(cat.name)}
-                className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all border ${
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all border whitespace-nowrap flex-shrink-0 ${
                   selectedCategory === cat.name
                     ? 'bg-primary text-primary-foreground border-primary shadow-sm'
                     : 'bg-card/70 hover:bg-secondary text-muted-foreground border-border/30'

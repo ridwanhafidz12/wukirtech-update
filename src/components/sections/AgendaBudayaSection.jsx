@@ -55,16 +55,16 @@ const AgendaBudayaSection = () => {
   const current = selectedEvent || featuredEvents[0];
 
   return (
-    <section id="agenda-budaya" className="py-16 md:py-24 bg-secondary/20 relative overflow-hidden">
+    <section id="agenda-budaya" className="py-12 md:py-20 bg-secondary/20 relative overflow-hidden">
       <div className="container mx-auto px-4 md:px-6 max-w-7xl">
         {/* Section Header */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between mb-10 gap-4">
+        <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 gap-3">
           <div>
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-primary/10 border border-primary/25 text-primary text-xs font-semibold mb-3">
-              <Calendar className="w-4 h-4" />
-              <span>Kalender Tradisi &amp; Lokasi Pelaksanaan</span>
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/25 text-primary text-xs font-semibold mb-2.5">
+              <Calendar className="w-3.5 h-3.5" />
+              <span>Kalender &amp; Lokasi Acara</span>
             </div>
-            <h2 className="text-3xl md:text-5xl font-extrabold text-foreground tracking-tight">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-foreground tracking-tight">
               Agenda Budaya <span className="text-primary">&amp; Peta Acara</span>
             </h2>
           </div>

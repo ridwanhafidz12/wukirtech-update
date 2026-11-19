@@ -77,18 +77,18 @@ const Hero = () => {
           {/* Heading */}
           <motion.h1
             variants={itemVariants}
-            className="text-4xl md:text-6xl lg:text-7xl font-extrabold text-foreground mb-6 leading-tight tracking-tight"
+            className="text-3xl sm:text-5xl lg:text-6xl font-extrabold text-foreground mb-4 sm:mb-6 leading-tight tracking-tight"
           >
-            Jelajahi Pesona Magis <br />
-            <span className="text-primary brightness-110">Desa Wukirsari</span>
+            Jelajahi Desa Wisata <br />
+            <span className="text-primary brightness-110">Wukirsari</span>
           </motion.h1>
 
           {/* Subheading */}
           <motion.p
             variants={itemVariants}
-            className="max-w-2xl mx-auto text-base md:text-lg text-muted-foreground mb-8"
+            className="max-w-xl mx-auto text-sm sm:text-base md:text-lg text-muted-foreground mb-7"
           >
-            Platform digital terpadu untuk menemukan keindahan alam, kekayaan budaya, dan karya produk UMKM otentik dari Wukirsari.
+            Temukan warisan budaya Mataram, sentra batik tulis Giriloyo, kuliner khas, dan panorama alam perbukitan Imogiri.
           </motion.p>
 
           {/* Hero Quick Search Bar */}
