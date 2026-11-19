@@ -198,16 +198,6 @@ const ProductDetailPage = () => {
               >
                 <ArrowLeft className="w-3.5 h-3.5 mr-1" /> Kembali
               </Button>
-              <Link to="/admin">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-8 px-2.5 text-xs rounded-xl text-primary/80 hover:text-primary hover:bg-primary/10"
-                  title="Edit data produk ini di Admin Panel"
-                >
-                  <Pencil className="w-3.5 h-3.5 mr-1" /> Kelola Produk
-                </Button>
-              </Link>
             </div>
           </div>
 

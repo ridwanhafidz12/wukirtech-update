@@ -34,6 +34,9 @@ const Header = () => {
       <NavLink to="/agenda" className={navLinkClasses}>
         Agenda
       </NavLink>
+      <NavLink to="/vr-tour" className={navLinkClasses}>
+        VR Tour
+      </NavLink>
       <NavLink to="/cari" className={navLinkClasses}>
         <Search className="w-3.5 h-3.5" />
         Pencarian
@@ -161,6 +164,13 @@ const Header = () => {
                 Produk UMKM
               </NavLink>
               <NavLink
+                to="/vr-tour"
+                onClick={() => setIsMenuOpen(false)}
+                className="text-lg font-bold uppercase tracking-wider text-muted-foreground hover:text-primary"
+              >
+                VR Tour 360°
+              </NavLink>
+              <NavLink
                 to="/cari"
                 onClick={() => setIsMenuOpen(false)}
                 className="text-lg font-bold uppercase tracking-wider text-primary flex items-center gap-2"
@@ -169,15 +179,6 @@ const Header = () => {
                 Pencarian
               </NavLink>
             </nav>
-
-            <div className="p-6 border-t border-border/20 space-y-3">
-              <Link to="/admin" onClick={() => setIsMenuOpen(false)} className="block">
-                <Button className="w-full bg-primary text-primary-foreground font-semibold h-11 rounded-xl flex items-center justify-center gap-2">
-                  <ShieldCheck className="w-4 h-4" />
-                  Masuk ke Panel Admin
-                </Button>
-              </Link>
-            </div>
           </motion.div>
         )}
       </AnimatePresence>

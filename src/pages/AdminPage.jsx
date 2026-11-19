@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Helmet } from 'react-helmet';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   ShieldCheck,
@@ -27,11 +27,23 @@ import {
   Image as ImageIcon,
   Star,
   X,
+  Compass,
+  Crosshair,
+  Navigation,
+  Info,
+  CheckCircle2,
+  MapPin,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/components/ui/use-toast';
 import { useData } from '@/context/DataContext';
+import Panorama360Viewer from '@/components/vr/Panorama360Viewer';
+import {
+  downloadStandaloneVrHtml,
+  validateAndCompressPanoramaFile,
+  inspectImageUrlDimensions,
+} from '@/utils/exportVrHtml';
 import {
   Dialog,
   DialogContent,
@@ -49,6 +61,9 @@ const PRESET_IMAGES = [
   { label: 'Wedang Uwuh', url: '/uwuh.jpg' },
   { label: 'Kipas Bambu', url: '/kipas.jpg' },
   { label: 'Sawah Wukirsari', url: '/sawah.jpg' },
+  { label: 'Makam Imogiri', url: '/images/destinasi/makam-imogiri.jpg' },
+  { label: 'Watu Gagak', url: '/images/destinasi/watu-gagak.jpg' },
+  { label: 'Grojogan Pucung', url: '/images/destinasi/grojogan-pucung.jpg' },
 ];
 
 const AdminPage = () => {
@@ -56,6 +71,7 @@ const AdminPage = () => {
     products,
     categories,
     events,
+    vrTour,
     addProduct,
     updateProduct,
     deleteProduct,
@@ -65,14 +81,35 @@ const AdminPage = () => {
     addEvent,
     updateEvent,
     deleteEvent,
+    updateVrTourConfig,
+    addVrScene,
+    updateVrScene,
+    deleteVrScene,
+    saveVrHotspot,
+    deleteVrHotspot,
     resetToDefaults,
     exportDataJson,
     importDataJson,
   } = useData();
 
   const { toast } = useToast();
+  const [searchParams, setSearchParams] = useSearchParams();
 
-  const [activeTab, setActiveTab] = useState('overview'); // overview | products | categories | events | backup
+  const [activeTab, setActiveTab] = useState(
+    () => searchParams.get('tab') || 'overview'
+  ); // overview | products | categories | events | vrtour | backup
+
+  useEffect(() => {
+    const tabParam = searchParams.get('tab');
+    if (tabParam && ['overview', 'products', 'categories', 'events', 'vrtour', 'backup'].includes(tabParam)) {
+      setActiveTab(tabParam);
+    }
+  }, [searchParams]);
+
+  const handleSelectTab = (tabName) => {
+    setActiveTab(tabName);
+    setSearchParams(tabName === 'overview' ? {} : { tab: tabName }, { replace: true });
+  };
 
   // Product Filter & Form State
   const [productSearch, setProductSearch] = useState('');
@@ -124,10 +161,69 @@ const AdminPage = () => {
   });
 
   // Delete Confirm Dialog
-  const [deleteTarget, setDeleteTarget] = useState(null); // { type: 'product'|'category'|'event', id, name }
+  const [deleteTarget, setDeleteTarget] = useState(null); // { type: 'product'|'category'|'event'|'vrScene', id, name }
 
   // JSON Import Textarea
   const [importJsonText, setImportJsonText] = useState('');
+
+  // VR Tour Management State
+  const vrScenes = vrTour?.scenes || [];
+  const [selectedVrSceneId, setSelectedVrSceneId] = useState(
+    () => vrTour?.startSceneId || vrScenes[0]?.id || ''
+  );
+  const [isVrSceneModalOpen, setIsVrSceneModalOpen] = useState(false);
+  const [editingVrScene, setEditingVrScene] = useState(null);
+  const [vrSceneForm, setVrSceneForm] = useState({
+    name: '',
+    category: 'Sejarah & Budaya',
+    image: '',
+    description: '',
+    initialYaw: 0,
+    initialPitch: 0,
+  });
+  const [vrPhotoMeta, setVrPhotoMeta] = useState(null);
+  const [isExportingVrHtml, setIsExportingVrHtml] = useState(false);
+
+  const [editingVrHotspotId, setEditingVrHotspotId] = useState(null);
+  const [vrHotspotForm, setVrHotspotForm] = useState({
+    type: 'nav',
+    yaw: 0,
+    pitch: 0,
+    targetSceneId: '',
+    label: '',
+    title: '',
+    description: '',
+    image: '',
+  });
+
+  const activeAdminVrScene =
+    vrScenes.find((s) => s.id === selectedVrSceneId) || vrScenes[0] || null;
+
+  useEffect(() => {
+    if (!activeAdminVrScene) return;
+    const other = vrScenes.find((s) => s.id !== activeAdminVrScene.id);
+    setVrHotspotForm((prev) => ({
+      ...prev,
+      targetSceneId:
+        prev.targetSceneId && prev.targetSceneId !== activeAdminVrScene.id
+          ? prev.targetSceneId
+          : other?.id || '',
+    }));
+  }, [activeAdminVrScene, vrScenes]);
+
+  useEffect(() => {
+    let cancelled = false;
+    if (!vrSceneForm.image) {
+      setVrPhotoMeta(null);
+      return undefined;
+    }
+    inspectImageUrlDimensions(vrSceneForm.image).then((res) => {
+      if (!cancelled) setVrPhotoMeta(res);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [vrSceneForm.image]);
 
   // ---------------- Handlers for Product ----------------
   const handleOpenAddProduct = () => {
@@ -431,6 +527,190 @@ const AdminPage = () => {
     setIsEventModalOpen(false);
   };
 
+  // ---------------- Handlers for VR Tour ----------------
+  const handleOpenAddVrScene = () => {
+    setEditingVrScene(null);
+    setVrPhotoMeta(null);
+    setVrSceneForm({
+      name: '',
+      category: 'Wisata Budaya',
+      image: '/images/destinasi/makam-imogiri.jpg',
+      description: '',
+      initialYaw: 0,
+      initialPitch: 0,
+    });
+    setIsVrSceneModalOpen(true);
+  };
+
+  const handleOpenEditVrScene = (scene) => {
+    setEditingVrScene(scene);
+    setVrSceneForm({
+      name: scene.name || '',
+      category: scene.category || 'Wisata Budaya',
+      image: scene.image || '',
+      description: scene.description || '',
+      initialYaw: scene.initialYaw || 0,
+      initialPitch: scene.initialPitch || 0,
+    });
+    setIsVrSceneModalOpen(true);
+  };
+
+  const handleUploadVrSceneFile = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      const result = await validateAndCompressPanoramaFile(file);
+      setVrSceneForm((prev) => ({ ...prev, image: result.dataUrl }));
+      setVrPhotoMeta({
+        ok: true,
+        width: result.width,
+        height: result.height,
+        ratio: result.ratio,
+        isEquirectangular: result.isEquirectangular,
+        compressedSizeKb: result.compressedSizeKb,
+        originalSizeKb: result.originalSizeKb,
+      });
+      toast({
+        title: result.isEquirectangular
+          ? 'Foto 360° Valid (Rasio 2:1)'
+          : 'Foto Dimuat (Periksa Rasio 2:1)',
+        description:
+          result.warning ||
+          `${result.width}x${result.height}px (${result.originalSizeKb}KB -> ${result.compressedSizeKb}KB).`,
+        variant: result.isEquirectangular ? 'default' : 'destructive',
+      });
+    } catch (err) {
+      toast({
+        title: 'Gagal Membaca Foto',
+        description: err.message,
+        variant: 'destructive',
+      });
+    } finally {
+      e.target.value = '';
+    }
+  };
+
+  const handleSaveVrScene = (e) => {
+    e.preventDefault();
+    if (!vrSceneForm.name.trim() || !vrSceneForm.image.trim()) {
+      toast({
+        title: 'Data Ruangan Belum Lengkap',
+        description: 'Nama ruangan dan foto panorama wajib diisi.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (editingVrScene) {
+      updateVrScene(editingVrScene.id, vrSceneForm);
+      toast({
+        title: 'Ruangan VR Diperbarui',
+        description: `"${vrSceneForm.name}" berhasil disimpan.`,
+      });
+    } else {
+      const created = addVrScene(vrSceneForm);
+      setSelectedVrSceneId(created.id);
+      toast({
+        title: 'Ruangan VR Ditambahkan',
+        description: `"${vrSceneForm.name}" ditambahkan ke daftar panorama.`,
+      });
+    }
+    setIsVrSceneModalOpen(false);
+  };
+
+  const handleAdminPickVrCoords = ({ yaw, pitch, hotspot }) => {
+    if (hotspot) {
+      setEditingVrHotspotId(hotspot.id);
+      setVrHotspotForm({
+        type: hotspot.type || 'nav',
+        yaw,
+        pitch,
+        targetSceneId: hotspot.targetSceneId || '',
+        label: hotspot.label || '',
+        title: hotspot.title || '',
+        description: hotspot.description || '',
+        image: hotspot.image || '',
+      });
+      toast({
+        title: 'Hotspot Dipilih',
+        description: 'Klik titik lain di panorama untuk menggesernya atau ubah form di bawah.',
+      });
+    } else {
+      setVrHotspotForm((prev) => ({ ...prev, yaw, pitch }));
+    }
+  };
+
+  const handleSaveAdminHotspot = (e) => {
+    e.preventDefault();
+    if (!activeAdminVrScene) return;
+
+    if (vrHotspotForm.type === 'nav' && !vrHotspotForm.targetSceneId) {
+      toast({
+        title: 'Pilih Ruangan Tujuan',
+        description: 'Hotspot navigasi harus mengarah ke ruangan lain.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    const targetRoom = vrScenes.find((s) => s.id === vrHotspotForm.targetSceneId);
+    const payload =
+      vrHotspotForm.type === 'nav'
+        ? {
+            id: editingVrHotspotId || undefined,
+            type: 'nav',
+            yaw: Number(vrHotspotForm.yaw) || 0,
+            pitch: Number(vrHotspotForm.pitch) || 0,
+            targetSceneId: vrHotspotForm.targetSceneId,
+            label:
+              vrHotspotForm.label.trim() ||
+              (targetRoom ? `Masuk ke ${targetRoom.name}` : 'Pindah Ruangan'),
+          }
+        : {
+            id: editingVrHotspotId || undefined,
+            type: 'info',
+            yaw: Number(vrHotspotForm.yaw) || 0,
+            pitch: Number(vrHotspotForm.pitch) || 0,
+            title: vrHotspotForm.title.trim() || 'Informasi Objek',
+            description: vrHotspotForm.description.trim() || 'Penjelasan objek.',
+            image: vrHotspotForm.image.trim(),
+          };
+
+    saveVrHotspot(activeAdminVrScene.id, payload);
+    setEditingVrHotspotId(null);
+    setVrHotspotForm((prev) => ({
+      ...prev,
+      label: '',
+      title: '',
+      description: '',
+      image: '',
+    }));
+
+    toast({
+      title: editingVrHotspotId ? 'Hotspot Diperbarui' : 'Hotspot Ditambahkan',
+      description: `Posisi Yaw ${payload.yaw}°, Pitch ${payload.pitch}° tersimpan.`,
+    });
+  };
+
+  const handleAdminExportVrHtml = async () => {
+    setIsExportingVrHtml(true);
+    try {
+      await downloadStandaloneVrHtml(vrTour);
+      toast({
+        title: 'File 1-HTML VR Tour Diunduh',
+        description: 'File vr-tour-360-wukirsari.html siap dibuka atau dibagikan.',
+      });
+    } catch (err) {
+      toast({
+        title: 'Gagal Ekspor HTML',
+        description: err.message,
+        variant: 'destructive',
+      });
+    } finally {
+      setIsExportingVrHtml(false);
+    }
+  };
+
   // ---------------- Deletion Handling ----------------
   const handleConfirmDelete = () => {
     if (!deleteTarget) return;
@@ -452,6 +732,12 @@ const AdminPage = () => {
       toast({
         title: 'Agenda Dihapus',
         description: `Agenda "${deleteTarget.name}" telah dihapus.`,
+      });
+    } else if (deleteTarget.type === 'vrScene') {
+      deleteVrScene(deleteTarget.id);
+      toast({
+        title: 'Ruangan VR Dihapus',
+        description: `Ruangan "${deleteTarget.name}" beserta tautannya telah dihapus.`,
       });
     }
 
@@ -573,7 +859,7 @@ const AdminPage = () => {
           {/* Navigation Tabs */}
           <div className="flex items-center gap-2 overflow-x-auto pb-3 mb-8 border-b border-border/20 scrollbar-thin">
             <button
-              onClick={() => setActiveTab('overview')}
+              onClick={() => handleSelectTab('overview')}
               className={`px-4 py-2.5 rounded-xl text-xs md:text-sm font-semibold transition-all flex items-center gap-2 whitespace-nowrap ${
                 activeTab === 'overview'
                   ? 'bg-primary text-primary-foreground shadow-md shadow-primary/20'
@@ -585,7 +871,7 @@ const AdminPage = () => {
             </button>
 
             <button
-              onClick={() => setActiveTab('products')}
+              onClick={() => handleSelectTab('products')}
               className={`px-4 py-2.5 rounded-xl text-xs md:text-sm font-semibold transition-all flex items-center gap-2 whitespace-nowrap ${
                 activeTab === 'products'
                   ? 'bg-primary text-primary-foreground shadow-md shadow-primary/20'
@@ -600,7 +886,7 @@ const AdminPage = () => {
             </button>
 
             <button
-              onClick={() => setActiveTab('categories')}
+              onClick={() => handleSelectTab('categories')}
               className={`px-4 py-2.5 rounded-xl text-xs md:text-sm font-semibold transition-all flex items-center gap-2 whitespace-nowrap ${
                 activeTab === 'categories'
                   ? 'bg-primary text-primary-foreground shadow-md shadow-primary/20'
@@ -615,7 +901,7 @@ const AdminPage = () => {
             </button>
 
             <button
-              onClick={() => setActiveTab('events')}
+              onClick={() => handleSelectTab('events')}
               className={`px-4 py-2.5 rounded-xl text-xs md:text-sm font-semibold transition-all flex items-center gap-2 whitespace-nowrap ${
                 activeTab === 'events'
                   ? 'bg-primary text-primary-foreground shadow-md shadow-primary/20'
@@ -630,7 +916,22 @@ const AdminPage = () => {
             </button>
 
             <button
-              onClick={() => setActiveTab('backup')}
+              onClick={() => handleSelectTab('vrtour')}
+              className={`px-4 py-2.5 rounded-xl text-xs md:text-sm font-semibold transition-all flex items-center gap-2 whitespace-nowrap ${
+                activeTab === 'vrtour'
+                  ? 'bg-primary text-primary-foreground shadow-md shadow-primary/20'
+                  : 'bg-card/70 hover:bg-secondary text-muted-foreground'
+              }`}
+            >
+              <Compass className="w-4 h-4" />
+              <span>Kelola VR Tour</span>
+              <span className="px-2 py-0.5 rounded-full text-[10px] bg-black/20">
+                {vrScenes.length}
+              </span>
+            </button>
+
+            <button
+              onClick={() => handleSelectTab('backup')}
               className={`px-4 py-2.5 rounded-xl text-xs md:text-sm font-semibold transition-all flex items-center gap-2 whitespace-nowrap ${
                 activeTab === 'backup'
                   ? 'bg-primary text-primary-foreground shadow-md shadow-primary/20'
@@ -686,14 +987,14 @@ const AdminPage = () => {
                 <div className="bg-card/80 border border-border/30 rounded-2xl p-5 shadow-sm">
                   <div className="flex items-center justify-between mb-3">
                     <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                      Produk Baru
+                      Titik VR 360°
                     </span>
                     <span className="p-2 rounded-xl bg-amber-500/10 text-amber-300">
-                      <Sparkles className="w-5 h-5" />
+                      <Compass className="w-5 h-5" />
                     </span>
                   </div>
                   <div className="text-3xl font-extrabold text-foreground">
-                    {products.filter((p) => p.isNew).length}
+                    {vrScenes.length}
                   </div>
                 </div>
               </div>
@@ -701,7 +1002,7 @@ const AdminPage = () => {
               {/* Quick Actions Bar */}
               <div className="bg-card/60 border border-border/30 rounded-2xl p-6">
                 <h3 className="text-base font-bold text-foreground mb-4">Aksi Cepat Admin</h3>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                   <Button
                     onClick={handleOpenAddProduct}
                     className="h-12 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold justify-start px-4 rounded-xl"
@@ -721,6 +1022,13 @@ const AdminPage = () => {
                     className="h-12 border-border/50 hover:bg-secondary font-semibold justify-start px-4 rounded-xl"
                   >
                     <Calendar className="w-5 h-5 mr-2 text-purple-400" /> Tambah Agenda Acara
+                  </Button>
+                  <Button
+                    onClick={() => handleSelectTab('vrtour')}
+                    variant="outline"
+                    className="h-12 border-border/50 hover:bg-secondary font-semibold justify-start px-4 rounded-xl"
+                  >
+                    <Compass className="w-5 h-5 mr-2 text-amber-400" /> Kelola VR Tour 360°
                   </Button>
                 </div>
               </div>
@@ -1068,6 +1376,413 @@ const AdminPage = () => {
                     </div>
                   </div>
                 ))}
+              </div>
+            </motion.div>
+          )}
+
+          {/* ================= TAB 4.5: MANAGE VR TOUR 360° ================= */}
+          {activeTab === 'vrtour' && (
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
+              {/* 1. Pengaturan Umum Tur & Ekspor 1 File HTML */}
+              <div className="bg-card/80 border border-border/30 rounded-2xl p-5 shadow-sm space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div>
+                    <h3 className="text-base font-bold text-foreground flex items-center gap-2">
+                      <Compass className="w-4 h-4 text-primary" /> Pengaturan VR Tour 360°
+                    </h3>
+                    <p className="text-xs text-muted-foreground">
+                      Atur judul tur, ruangan awal, foto equirectangular 2:1, serta koneksi hotspot antar ruangan.
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Link to="/vr-tour" target="_blank">
+                      <Button variant="outline" size="sm" className="h-9 text-xs rounded-xl">
+                        <ExternalLink className="w-3.5 h-3.5 mr-1.5" /> Buka Halaman VR Tour
+                      </Button>
+                    </Link>
+                    <Button
+                      size="sm"
+                      disabled={isExportingVrHtml}
+                      onClick={handleAdminExportVrHtml}
+                      className="h-9 text-xs rounded-xl font-semibold"
+                    >
+                      <Download className="w-3.5 h-3.5 mr-1.5" />
+                      {isExportingVrHtml ? 'Membuat HTML...' : 'Unduh 1 File HTML Mandiri'}
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2 border-t border-border/20">
+                  <div>
+                    <label className="text-xs font-semibold text-foreground mb-1 block">Judul VR Tour</label>
+                    <Input
+                      value={vrTour?.title || ''}
+                      onChange={(e) => updateVrTourConfig({ title: e.target.value })}
+                      className="text-xs h-9"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-semibold text-foreground mb-1 block">Subjudul / Tema</label>
+                    <Input
+                      value={vrTour?.subtitle || ''}
+                      onChange={(e) => updateVrTourConfig({ subtitle: e.target.value })}
+                      className="text-xs h-9"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-semibold text-foreground mb-1 block">Ruangan Awal Tur</label>
+                    <select
+                      value={vrTour?.startSceneId || ''}
+                      onChange={(e) => updateVrTourConfig({ startSceneId: e.target.value })}
+                      className="w-full h-9 px-3 rounded-md border border-input bg-background text-xs text-foreground"
+                    >
+                      {vrScenes.map((s) => (
+                        <option key={s.id} value={s.id}>
+                          {s.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              {/* 2. Daftar Ruangan Panorama (CRUD Scene) */}
+              <div className="bg-card/80 border border-border/30 rounded-2xl p-5 shadow-sm space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div>
+                    <h3 className="text-base font-bold text-foreground">
+                      Daftar Ruangan Panorama ({vrScenes.length})
+                    </h3>
+                    <p className="text-xs text-muted-foreground">
+                      Pilih salah satu ruangan di bawah ini untuk mengelola hotspot dan melihat pratinjau 360°.
+                    </p>
+                  </div>
+                  <Button
+                    onClick={handleOpenAddVrScene}
+                    size="sm"
+                    className="h-9 text-xs rounded-xl font-semibold"
+                  >
+                    <Plus className="w-4 h-4 mr-1.5" /> Tambah Ruangan Panorama
+                  </Button>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                  {vrScenes.map((scene) => {
+                    const isSelected = activeAdminVrScene?.id === scene.id;
+                    const isStart = vrTour?.startSceneId === scene.id;
+                    return (
+                      <div
+                        key={scene.id}
+                        onClick={() => {
+                          setSelectedVrSceneId(scene.id);
+                          setEditingVrHotspotId(null);
+                        }}
+                        className={`cursor-pointer rounded-2xl overflow-hidden border transition-all flex flex-col justify-between ${
+                          isSelected
+                            ? 'border-primary ring-2 ring-primary/30 bg-primary/5 shadow-md'
+                            : 'border-border/30 bg-secondary/25 hover:border-primary/40'
+                        }`}
+                      >
+                        <div>
+                          <div className="relative aspect-[16/9] bg-black/40">
+                            <img
+                              src={scene.image}
+                              alt={scene.name}
+                              className="w-full h-full object-cover"
+                              onError={(e) => {
+                                e.target.src = '/batik.jpg';
+                              }}
+                            />
+                            {isStart && (
+                              <span className="absolute top-2 left-2 px-2 py-0.5 rounded-full bg-primary text-primary-foreground text-[10px] font-bold">
+                                Ruangan Awal
+                              </span>
+                            )}
+                          </div>
+                          <div className="p-3">
+                            <span className="text-[10px] font-semibold text-primary block">
+                              {scene.category || 'Panorama'}
+                            </span>
+                            <h4 className="text-xs font-bold text-foreground line-clamp-1 mb-1">
+                              {scene.name}
+                            </h4>
+                            <p className="text-[11px] text-muted-foreground line-clamp-2">
+                              {scene.description || 'Belum ada deskripsi ruangan.'}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div
+                          className="px-3 pb-3 pt-2 border-t border-border/20 flex items-center justify-between text-[11px]"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <span className="text-muted-foreground">
+                            {scene.hotspots?.length || 0} hotspot
+                          </span>
+                          <div className="flex items-center gap-1">
+                            <Button
+                              type="button"
+                              size="icon"
+                              variant="ghost"
+                              onClick={() => handleOpenEditVrScene(scene)}
+                              className="h-7 w-7 text-muted-foreground hover:text-foreground"
+                              title="Edit ruangan & foto"
+                            >
+                              <Pencil className="w-3.5 h-3.5" />
+                            </Button>
+                            <Button
+                              type="button"
+                              size="icon"
+                              variant="ghost"
+                              onClick={() =>
+                                setDeleteTarget({
+                                  type: 'vrScene',
+                                  id: scene.id,
+                                  name: scene.name,
+                                })
+                              }
+                              className="h-7 w-7 text-muted-foreground hover:text-destructive"
+                              title="Hapus ruangan"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* 3. Manajemen Hotspot & Pratinjau Klik Koordinat 360° */}
+              {activeAdminVrScene && (
+                <div className="bg-card/80 border border-border/30 rounded-2xl p-5 shadow-sm space-y-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <div>
+                      <h3 className="text-base font-bold text-foreground flex items-center gap-2">
+                        <Crosshair className="w-4 h-4 text-primary" />
+                        Editor Hotspot: <span className="text-primary">{activeAdminVrScene.name}</span>
+                      </h3>
+                      <p className="text-xs text-muted-foreground">
+                        Klik titik mana pun di dalam panorama untuk mengisi koordinat Yaw &amp; Pitch otomatis, atau klik hotspot yang ada untuk menggesernya.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+                    {/* Pratinjau Klik Koordinat 360° */}
+                    <div className="lg:col-span-7">
+                      <Panorama360Viewer
+                        scene={activeAdminVrScene}
+                        allScenes={vrScenes}
+                        editorMode
+                        compact
+                        pickedCoords={{ yaw: vrHotspotForm.yaw, pitch: vrHotspotForm.pitch }}
+                        onPickCoordinates={handleAdminPickVrCoords}
+                        className="h-[340px] sm:h-[400px]"
+                      />
+                    </div>
+
+                    {/* Form & Daftar Hotspot Ruangan Aktif */}
+                    <div className="lg:col-span-5 space-y-4">
+                      <form
+                        onSubmit={handleSaveAdminHotspot}
+                        className="bg-secondary/35 border border-border/30 rounded-2xl p-4 space-y-3"
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-bold text-foreground">
+                            {editingVrHotspotId ? 'Edit / Geser Hotspot' : 'Tambah Hotspot Baru'}
+                          </span>
+                          {editingVrHotspotId && (
+                            <button
+                              type="button"
+                              onClick={() => setEditingVrHotspotId(null)}
+                              className="text-[11px] text-primary hover:underline"
+                            >
+                              Reset ke Baru
+                            </button>
+                          )}
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-2">
+                          <div>
+                            <label className="text-[11px] font-semibold block mb-1">Yaw (°)</label>
+                            <Input
+                              type="number"
+                              step="0.1"
+                              value={vrHotspotForm.yaw}
+                              onChange={(e) =>
+                                setVrHotspotForm((f) => ({ ...f, yaw: Number(e.target.value) }))
+                              }
+                              className="h-8 text-xs font-mono"
+                            />
+                          </div>
+                          <div>
+                            <label className="text-[11px] font-semibold block mb-1">Pitch (°)</label>
+                            <Input
+                              type="number"
+                              step="0.1"
+                              value={vrHotspotForm.pitch}
+                              onChange={(e) =>
+                                setVrHotspotForm((f) => ({ ...f, pitch: Number(e.target.value) }))
+                              }
+                              className="h-8 text-xs font-mono"
+                            />
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-2">
+                          <button
+                            type="button"
+                            onClick={() => setVrHotspotForm((f) => ({ ...f, type: 'nav' }))}
+                            className={`py-1.5 px-2 rounded-lg text-xs font-semibold border flex items-center justify-center gap-1 ${
+                              vrHotspotForm.type === 'nav'
+                                ? 'bg-primary text-primary-foreground border-primary'
+                                : 'bg-background text-muted-foreground border-border/40'
+                            }`}
+                          >
+                            <Navigation className="w-3.5 h-3.5" /> Pindah Ruangan
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setVrHotspotForm((f) => ({ ...f, type: 'info' }))}
+                            className={`py-1.5 px-2 rounded-lg text-xs font-semibold border flex items-center justify-center gap-1 ${
+                              vrHotspotForm.type === 'info'
+                                ? 'bg-amber-500 text-black border-amber-500'
+                                : 'bg-background text-muted-foreground border-border/40'
+                            }`}
+                          >
+                            <Info className="w-3.5 h-3.5" /> Penjelasan
+                          </button>
+                        </div>
+
+                        {vrHotspotForm.type === 'nav' ? (
+                          <>
+                            <div>
+                              <label className="text-[11px] font-semibold block mb-1">Ruangan Tujuan</label>
+                              <select
+                                value={vrHotspotForm.targetSceneId}
+                                onChange={(e) =>
+                                  setVrHotspotForm((f) => ({ ...f, targetSceneId: e.target.value }))
+                                }
+                                className="w-full h-8 px-2.5 rounded-md border border-input bg-background text-xs"
+                              >
+                                {vrScenes
+                                  .filter((s) => s.id !== activeAdminVrScene.id)
+                                  .map((s) => (
+                                    <option key={s.id} value={s.id}>
+                                      {s.name}
+                                    </option>
+                                  ))}
+                              </select>
+                            </div>
+                            <div>
+                              <label className="text-[11px] font-semibold block mb-1">Label Tombol</label>
+                              <Input
+                                placeholder="Contoh: Masuk ke Kampung Batik"
+                                value={vrHotspotForm.label}
+                                onChange={(e) =>
+                                  setVrHotspotForm((f) => ({ ...f, label: e.target.value }))
+                                }
+                                className="h-8 text-xs"
+                              />
+                            </div>
+                          </>
+                        ) : (
+                          <>
+                            <div>
+                              <label className="text-[11px] font-semibold block mb-1">Judul Info</label>
+                              <Input
+                                placeholder="Judul objek"
+                                value={vrHotspotForm.title}
+                                onChange={(e) =>
+                                  setVrHotspotForm((f) => ({ ...f, title: e.target.value }))
+                                }
+                                className="h-8 text-xs"
+                              />
+                            </div>
+                            <div>
+                              <label className="text-[11px] font-semibold block mb-1">Deskripsi</label>
+                              <textarea
+                                rows={2}
+                                placeholder="Penjelasan singkat..."
+                                value={vrHotspotForm.description}
+                                onChange={(e) =>
+                                  setVrHotspotForm((f) => ({ ...f, description: e.target.value }))
+                                }
+                                className="w-full p-2 rounded-md border border-input bg-background text-xs"
+                              />
+                            </div>
+                            <div>
+                              <label className="text-[11px] font-semibold block mb-1">Gambar Kecil (Opsional)</label>
+                              <Input
+                                placeholder="/images/destinasi/... atau URL"
+                                value={vrHotspotForm.image}
+                                onChange={(e) =>
+                                  setVrHotspotForm((f) => ({ ...f, image: e.target.value }))
+                                }
+                                className="h-8 text-xs"
+                              />
+                            </div>
+                          </>
+                        )}
+
+                        <Button type="submit" size="sm" className="w-full h-8 rounded-xl text-xs font-bold">
+                          <Plus className="w-3.5 h-3.5 mr-1" />
+                          {editingVrHotspotId ? 'Simpan Perubahan Hotspot' : 'Simpan Hotspot ke Ruangan'}
+                        </Button>
+                      </form>
+
+                      {/* Daftar Hotspot Ruangan Terpilih */}
+                      <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
+                        <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground block">
+                          Hotspot Terpasang ({activeAdminVrScene.hotspots?.length || 0})
+                        </span>
+                        {(activeAdminVrScene.hotspots || []).map((hs) => (
+                          <div
+                            key={hs.id}
+                            className="flex items-center justify-between gap-2 p-2.5 rounded-xl bg-secondary/30 border border-border/30 text-xs"
+                          >
+                            <button
+                              type="button"
+                              onClick={() =>
+                                handleAdminPickVrCoords({ yaw: hs.yaw, pitch: hs.pitch, hotspot: hs })
+                              }
+                              className="text-left min-w-0 flex-1"
+                            >
+                              <span className="font-semibold text-foreground block truncate">
+                                {hs.type === 'nav' ? `➜ ${hs.label}` : `i ${hs.title}`}
+                              </span>
+                              <span className="text-[10px] font-mono text-muted-foreground">
+                                Yaw {hs.yaw}°, Pitch {hs.pitch}°
+                              </span>
+                            </button>
+                            <Button
+                              type="button"
+                              size="icon"
+                              variant="ghost"
+                              onClick={() => deleteVrHotspot(activeAdminVrScene.id, hs.id)}
+                              className="h-7 w-7 text-rose-500 hover:bg-rose-500/10 flex-shrink-0"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* 4. Catatan Teknis & Solusi */}
+              <div className="bg-secondary/35 border border-border/30 rounded-2xl p-4 flex items-start gap-3 text-xs text-muted-foreground">
+                <Info className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
+                <div>
+                  <strong className="text-foreground block mb-0.5">
+                    Catatan Teknis Foto Panorama &amp; Penyimpanan Browser
+                  </strong>
+                  Foto 360° equirectangular idealnya memiliki rasio <strong>2:1</strong> (misalnya 2048×1024px atau 4096×2048px). Karena penyimpanan browser (<em>localStorage</em>) dibatasi ±5 MB, unggahan foto akan otomatis dikompresi menjadi JPEG maksimal lebar 2048px. Untuk membagikan tur dengan aset tertanam mandiri tanpa batas cache lokal, klik tombol <strong>Unduh 1 File HTML Mandiri</strong> di atas.
+                </div>
               </div>
             </motion.div>
           )}
@@ -1663,6 +2378,171 @@ const AdminPage = () => {
               </Button>
               <Button type="submit" size="sm" className="bg-primary text-primary-foreground font-semibold text-xs">
                 {editingEvent ? 'Simpan Agenda' : 'Tambah Agenda'}
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* ================= MODAL: ADD / EDIT VR SCENE ================= */}
+      <Dialog open={isVrSceneModalOpen} onOpenChange={setIsVrSceneModalOpen}>
+        <DialogContent className="max-w-lg bg-card border-border/40 max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-lg font-bold text-foreground">
+              {editingVrScene ? 'Edit Ruangan Panorama 360°' : 'Tambah Ruangan Panorama Baru'}
+            </DialogTitle>
+            <DialogDescription className="text-xs text-muted-foreground">
+              Unggah foto panorama equirectangular (rasio 2:1) atau pilih aset gambar.
+            </DialogDescription>
+          </DialogHeader>
+
+          <form onSubmit={handleSaveVrScene} className="space-y-4 mt-2">
+            <div>
+              <label className="text-xs font-semibold text-foreground mb-1 block">Nama Ruangan *</label>
+              <Input
+                required
+                placeholder="Contoh: Pendopo Agung Giriloyo"
+                value={vrSceneForm.name}
+                onChange={(e) => setVrSceneForm({ ...vrSceneForm, name: e.target.value })}
+                className="text-xs h-9"
+              />
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="text-xs font-semibold text-foreground mb-1 block">Kategori</label>
+                <Input
+                  placeholder="Sejarah & Budaya"
+                  value={vrSceneForm.category}
+                  onChange={(e) => setVrSceneForm({ ...vrSceneForm, category: e.target.value })}
+                  className="text-xs h-9"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="text-xs font-semibold text-foreground mb-1 block">Yaw Awal (°)</label>
+                  <Input
+                    type="number"
+                    value={vrSceneForm.initialYaw}
+                    onChange={(e) => setVrSceneForm({ ...vrSceneForm, initialYaw: Number(e.target.value) })}
+                    className="text-xs h-9 font-mono"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-foreground mb-1 block">Pitch Awal (°)</label>
+                  <Input
+                    type="number"
+                    value={vrSceneForm.initialPitch}
+                    onChange={(e) => setVrSceneForm({ ...vrSceneForm, initialPitch: Number(e.target.value) })}
+                    className="text-xs h-9 font-mono"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-semibold text-foreground">Foto Panorama 360° *</label>
+                <label className="cursor-pointer inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-primary text-primary-foreground text-[11px] font-semibold hover:opacity-90">
+                  <Upload className="w-3.5 h-3.5" /> Unggah Foto (Cek Rasio 2:1)
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleUploadVrSceneFile}
+                    className="hidden"
+                  />
+                </label>
+              </div>
+
+              <Input
+                placeholder="/images/destinasi/... atau URL/DataURL"
+                value={vrSceneForm.image}
+                onChange={(e) => setVrSceneForm({ ...vrSceneForm, image: e.target.value })}
+                className="text-xs h-9"
+              />
+
+              {/* Preset cepat */}
+              <div className="flex items-center flex-wrap gap-1.5">
+                {PRESET_IMAGES.slice(8).concat(PRESET_IMAGES.slice(0, 4)).map((img) => (
+                  <button
+                    key={img.url}
+                    type="button"
+                    onClick={() => setVrSceneForm({ ...vrSceneForm, image: img.url })}
+                    className="px-2 py-0.5 rounded text-[11px] border border-border/30 bg-secondary/40 hover:bg-primary/20 text-muted-foreground hover:text-primary"
+                  >
+                    {img.label}
+                  </button>
+                ))}
+              </div>
+
+              {vrPhotoMeta && (
+                <div
+                  className={`p-2.5 rounded-xl border text-[11px] flex items-start gap-2 ${
+                    vrPhotoMeta.ok && vrPhotoMeta.isEquirectangular
+                      ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-500'
+                      : 'bg-amber-500/10 border-amber-500/30 text-amber-400'
+                  }`}
+                >
+                  {vrPhotoMeta.ok && vrPhotoMeta.isEquirectangular ? (
+                    <CheckCircle2 className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                  ) : (
+                    <AlertTriangle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                  )}
+                  <div>
+                    {vrPhotoMeta.ok ? (
+                      <>
+                        Dimensi terbaca: <strong>{vrPhotoMeta.width}×{vrPhotoMeta.height}px</strong> (Rasio{' '}
+                        <strong>{vrPhotoMeta.ratio}:1</strong>).{' '}
+                        {vrPhotoMeta.isEquirectangular
+                          ? 'Memenuhi standar equirectangular 2:1.'
+                          : 'Rasio bukan 2:1, namun tetap bisa ditampilkan (kutub atas/bawah dapat sedikit melengkung).'}
+                      </>
+                    ) : (
+                      vrPhotoMeta.error
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {vrSceneForm.image && (
+                <div className="relative aspect-[2/1] w-full rounded-xl overflow-hidden border border-border/30 bg-black/40">
+                  <img
+                    src={vrSceneForm.image}
+                    alt="Pratinjau panorama"
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      e.target.src = '/batik.jpg';
+                    }}
+                  />
+                </div>
+              )}
+            </div>
+
+            <div>
+              <label className="text-xs font-semibold text-foreground mb-1 block">
+                Deskripsi Singkat Ruangan (Tampil saat ruangan dibuka)
+              </label>
+              <textarea
+                rows={2}
+                placeholder="Jelaskan suasana atau sejarah singkat titik ini..."
+                value={vrSceneForm.description}
+                onChange={(e) => setVrSceneForm({ ...vrSceneForm, description: e.target.value })}
+                className="w-full text-xs p-2.5 rounded-md border border-input bg-background text-foreground focus:outline-none"
+              />
+            </div>
+
+            <div className="flex items-center justify-end gap-2.5 pt-4 border-t border-border/20">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setIsVrSceneModalOpen(false)}
+                className="text-xs"
+              >
+                Batal
+              </Button>
+              <Button type="submit" size="sm" className="bg-primary text-primary-foreground font-semibold text-xs">
+                {editingVrScene ? 'Simpan Perubahan' : 'Tambah Ruangan'}
               </Button>
             </div>
           </form>

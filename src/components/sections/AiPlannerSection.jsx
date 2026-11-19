@@ -6,68 +6,13 @@ import { BrainCircuit, Sparkles, Bot, Wand2, Mountain, Utensils, Palette, Shoppi
 import { cn } from '@/lib/utils';
 
 // Data UMKM dan Produk
+import { defaultProducts as products } from '@/data/defaultData';
+
 const umkmData = [
   { name: 'Kerajinan', value: 45, color: 'hsl(var(--primary))' },
   { name: 'Kuliner', value: 35, color: 'hsl(80, 70%, 50%)' },
   { name: 'Jasa & Akomodasi', value: 15, color: 'hsl(140, 50%, 60%)' },
   { name: 'Agrowisata', value: 12, color: 'hsl(40, 60%, 60%)' },
-];
-
-const products = [
-  {
-    name: "Wedang Uwuh Bu Endang",
-    category: "Kuliner",
-    umkm: "UMKM Wukirsari",
-    price: "Rp20.000 / 10pcs",
-    imageAlt: "Tiga gelas wedang uwuh hangat disajikan di atas meja",
-    imageUrl: "https://horizons-cdn.hostinger.com/73e774d8-1f03-44b2-ba9c-4491a99e3f2f/831f4e5dfdf72e4880aa6b7ee71b46b8.jpg",
-    isNew: false,
-  },
-  {
-    name: "Handmade Batik",
-    category: "Kerajinan Tangan",
-    umkm: "Handmade batik",
-    price: "Rp700.000 - Rp800.000",
-    imageAlt: "Batik tulis Giriloyo dengan motif klasik",
-    imageUrl: "https://horizons-cdn.hostinger.com/73e774d8-1f03-44b2-ba9c-4491a99e3f2f/3dd1c78d54698e2fa97c00ef157f5362.jpg",
-    isNew: false,
-  },
-  {
-    name: "Wayang Kulit Arjuna",
-    category: "Seni Pertunjukan",
-    umkm: "Ituk Wayang",
-    price: "Rp600.000",
-    imageAlt: "Wayang kulit dari Pucung",
-    imageUrl: "public/wayang.jpeg",
-    isNew: true,
-  },
-  {
-    name: "Kipas Tangan Zainal",
-    category: "Kerajinan Tangan",
-    umkm: "Zainal",
-    price: "Rp25.000",
-    imageAlt: "Kipas bambu dengan motif batik",
-    imageUrl: "kipas.jpg",
-    isNew: true,
-  },
-  {
-    name: "Thiwul Mbak Iswati",
-    category: "Kuliner",
-    umkm: "Mbak Iswati",
-    price: "Rp15.000 / porsi",
-    imageAlt: "Thiwul instan disajikan dengan kelapa parut",
-    imageUrl: "https://horizons-cdn.hostinger.com/73e774d8-1f03-44b2-ba9c-4491a99e3f2f/1af69d4a5467c90cf617e50609d8d0cb.jpg",
-    isNew: true,
-  },
-  {
-    name: "Batik Sungsang",
-    category: "Kerajinan Tangan",
-    umkm: "Paguyuban Batik Giriloyo",
-    price: "Rp900.000",
-    imageAlt: "Batik Sungsang dengan motif abstrak dan warna cerah",
-    imageUrl: "https://horizons-cdn.hostinger.com/73e774d8-1f03-44b2-ba9c-4491a99e3f2f/5fc39e8d401246d025cbe6ff72389b49.jpg",
-    isNew: true,
-  }
 ];
 
 // Data destinasi wisata yang diperbarui dengan informasi lengkap
@@ -84,7 +29,7 @@ const destinations = [
     highlights: ["Batik Tulis Authentic", "Pengrajin Lokal", "Workshop Interaktif"],
     facilities: ["Area Workshop", "Showroom", "Toilet", "Parkir"],
     rating: 4.8,
-    imageUrl: "https://images.unsplash.com/photo-1554341117-2c084a55c8dc?w=400",
+    imageUrl: "/batik.jpg",
     location: "Desa Giriloyo, Wukirsari"
   },
   {
@@ -99,7 +44,7 @@ const destinations = [
     highlights: ["Wayang Kulit Authentic", "Pertunjukan Live", "Proses Pembuatan Tradisional"],
     facilities: ["Auditorium", "Workshop Area", "Parkir", "Toilet"],
     rating: 4.7,
-    imageUrl: "https://images.unsplash.com/photo-1588072432907-cb61cbc3e4f9?w=400",
+    imageUrl: "/wayang.jpeg",
     location: "Desa Pucung, Wukirsari"
   },
   {
@@ -114,7 +59,7 @@ const destinations = [
     highlights: ["Pemandangan Sunset", "Udara Segar", "Spot Foto Instagramable"],
     facilities: ["Area Parkir", "Gazebo", "Toilet", "Warung Makan"],
     rating: 4.6,
-    imageUrl: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400",
+    imageUrl: "/images/destinasi/watu-gagak.jpg",
     location: "Puncak Wukirsari"
   },
   {
@@ -129,7 +74,7 @@ const destinations = [
     highlights: ["Pemandangan Danau", "Udara Segar", "Area Piknik"],
     facilities: ["Area Piknik", "Perahu Sewa", "Warung Makan", "Toilet", "Parkir"],
     rating: 4.5,
-    imageUrl: "https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?w=400",
+    imageUrl: "/images/destinasi/embung-wukirsari.jpg",
     location: "Pusat Desa Wukirsari"
   },
   {
@@ -144,7 +89,7 @@ const destinations = [
     highlights: ["Makanan Tradisional", "Wedang Uwuh", "Thiwul Khas", "Atmosfer Tradisional"],
     facilities: ["Area Makan", "Demo Kitchen", "Toilet", "Parkir"],
     rating: 4.7,
-    imageUrl: "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=400",
+    imageUrl: "/images/destinasi/pecel-imogiri.jpg",
     location: "Jalan Utama Wukirsari"
   },
   {
@@ -161,6 +106,51 @@ const destinations = [
     rating: 4.4,
     imageUrl: "https://images.unsplash.com/photo-1556679343-c7306c1976bc?w=400",
     location: "Perbukitan Wukirsari"
+  },
+  {
+    id: 7,
+    name: "Makam Raja-Raja Mataram Imogiri",
+    type: "Sejarah & Cagar Budaya",
+    description: "Situs cagar budaya Pajimatan Girirejo Imogiri peninggalan Sultan Agung (1632) dengan tangga batu megah, Masjid Pajimatan, dan tradisi sakral Nguras Enceh",
+    activities: ["Ziarah Budaya", "Wisata Sejarah Mataram", "Foto Busana Adat", "Menyaksikan Tradisi Nguras Enceh"],
+    price: "Rp 10.000 - Rp 90.000",
+    duration: "2-3 jam",
+    bestTime: "Pagi atau Siang (Senin, Jumat, Minggu untuk masuk cungkup)",
+    highlights: ["Tangga Seribu Pajimatan", "4 Enceh Pusaka Sultan Agung", "Arsitektur Candi Bentar Mataram"],
+    facilities: ["Penyewaan Busana Adat", "Museum Mahkota Raja", "Masjid Kagungan Dalem", "Sentra Kuliner Pecel & Wedang Uwuh"],
+    rating: 4.9,
+    imageUrl: "/images/destinasi/makam-imogiri.jpg",
+    location: "Pajimatan Imogiri, Wukirsari"
+  },
+  {
+    id: 8,
+    name: "Bukit Bego & Lembah Sorory Sungai Oya",
+    type: "Alam & Petualangan",
+    description: "Perpaduan wisata gardu pandang perbukitan Kedungbuweng, air terjun Grojogan Pucung, dan lembah hijau tepi Sungai Oya",
+    activities: ["Camping Ground", "Susur Sungai Oya", "Outbound Keluarga", "Gardu Pandang Sunset"],
+    price: "Rp 10.000 - Rp 50.000",
+    duration: "2-4 jam",
+    bestTime: "Pagi atau Sore Hari",
+    highlights: ["Panorama Perbukitan Imogiri", "Aliran Asri Sungai Oya", "Udara Sejuk Pegunungan"],
+    facilities: ["Area Camping", "Gazebo", "Kamar Bilas", "Warung Kuliner Desa"],
+    rating: 4.7,
+    imageUrl: "/images/destinasi/bukit-bego.jpg",
+    location: "Kedungbuweng & Sorory, Wukirsari"
+  },
+  {
+    id: 9,
+    name: "Situs Makam Kuno Giriloyo & Sentra Kipas Karangtalun",
+    type: "Sejarah & Kriya",
+    description: "Jejak sejarah Panembahan Juminah di bukit Giriloyo yang berpadu dengan kerajinan kipas bambu batik ramah lingkungan di Karangtalun",
+    activities: ["Ziarah Sejarah Giriloyo", "Melihat Pembuatan Kipas Bambu", "Belanja Souvenir Kipas Batik"],
+    price: "Rp 15.000 - Rp 50.000",
+    duration: "1-2 jam",
+    bestTime: "Pagi hingga Sore",
+    highlights: ["Situs Mataram Kuno", "Kerajinan Bambu Ramah Lingkungan", "Harga Langsung Pengrajin"],
+    facilities: ["Showroom Kriya", "Area Parkir", "Mushola"],
+    rating: 4.8,
+    imageUrl: "/images/destinasi/makam-giriloyo.jpg",
+    location: "Giriloyo & Karangtalun, Wukirsari"
   }
 ];
 

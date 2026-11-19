@@ -8,6 +8,7 @@ import PlannerPage from '@/pages/PlannerPage';
 import ProdukPage from '@/pages/ProdukPage';
 import ProductDetailPage from '@/pages/ProductDetailPage';
 import SearchPage from '@/pages/SearchPage';
+import VrTourPage from '@/pages/VrTourPage';
 import AdminPage from '@/pages/AdminPage';
 import { Toaster } from '@/components/ui/toaster';
 import { DataProvider } from '@/context/DataContext';
@@ -24,6 +25,7 @@ function App() {
           <Route path="produk" element={<ProdukPage />} />
           <Route path="produk/:id" element={<ProductDetailPage />} />
           <Route path="cari" element={<SearchPage />} />
+          <Route path="vr-tour" element={<VrTourPage />} />
           <Route path="admin" element={<AdminPage />} />
         </Route>
       </Routes>

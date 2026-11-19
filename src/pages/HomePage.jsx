@@ -1,6 +1,8 @@
 import React from 'react';
 import { Helmet } from 'react-helmet';
 import Hero from '@/components/sections/Hero';
+import NewsHeadlineSection from '@/components/sections/NewsHeadlineSection';
+import AgendaBudayaSection from '@/components/sections/AgendaBudayaSection';
 import DashboardSection from '@/components/sections/DashboardSection';
 import InteractiveMapSection from '@/components/sections/InteractiveMapSection';
 import AiPlannerSection from '@/components/sections/AiPlannerSection';
@@ -27,6 +29,8 @@ const HomePage = () => {
       </Helmet>
       <FallingParticles />
       <Hero />
+      <NewsHeadlineSection />
+      <AgendaBudayaSection />
       <DashboardSection />
       <InteractiveMapSection />
       <AiPlannerSection />

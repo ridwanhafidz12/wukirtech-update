@@ -389,13 +389,6 @@ const SearchPage = () => {
                 </>
               )}
             </p>
-
-            <Link
-              to="/admin"
-              className="text-xs text-primary hover:underline flex items-center gap-1 font-semibold"
-            >
-              + Kelola Data di Admin
-            </Link>
           </div>
 
           {/* Main Results Display */}

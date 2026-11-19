@@ -1,12 +1,14 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { defaultCategories, defaultProducts, defaultEvents } from '@/data/defaultData';
+import { defaultCategories, defaultProducts, defaultEvents, defaultNews, defaultVrTour } from '@/data/defaultData';
 
 const DataContext = createContext(null);
 
 const STORAGE_KEYS = {
-  PRODUCTS: 'wukirtech_products_v1',
-  CATEGORIES: 'wukirtech_categories_v1',
-  EVENTS: 'wukirtech_events_v1',
+  PRODUCTS: 'wukirtech_products_v2',
+  CATEGORIES: 'wukirtech_categories_v2',
+  EVENTS: 'wukirtech_events_v2',
+  NEWS: 'wukirtech_news_v1',
+  VR_TOUR: 'wukirtech_vrtour_v1',
 };
 
 export const DataProvider = ({ children }) => {
@@ -15,8 +17,15 @@ export const DataProvider = ({ children }) => {
       const saved = localStorage.getItem(STORAGE_KEYS.PRODUCTS);
       if (!saved) return defaultProducts;
       const parsed = JSON.parse(saved);
+      // Jika data tersimpan masih versi lama (< 50 produk), gabungkan dengan defaultProducts baru agar 60 produk tampil lengkap
+      const merged = Array.isArray(parsed) && parsed.length >= defaultProducts.length
+        ? parsed
+        : [
+            ...parsed,
+            ...defaultProducts.filter((dp) => !parsed.some((p) => p.id === dp.id)),
+          ];
       // Normalisasi setiap produk agar selalu memiliki images, fullDescription, dll
-      return parsed.map((p) => {
+      return merged.map((p) => {
         const rawImages = Array.isArray(p.images) && p.images.length > 0
           ? p.images
           : (p.imageUrl ? [p.imageUrl] : ['/batik.jpg']);
@@ -59,10 +68,69 @@ export const DataProvider = ({ children }) => {
   const [events, setEvents] = useState(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEYS.EVENTS);
-      return saved ? JSON.parse(saved) : defaultEvents;
+      if (!saved) return defaultEvents;
+      const parsed = JSON.parse(saved);
+      if (!Array.isArray(parsed)) return defaultEvents;
+
+      // Gabungkan event baru dari defaultEvents & perkaya data lokasi/koordinat/gambar
+      const defaultById = new Map(defaultEvents.map((de) => [de.id, de]));
+      const enriched = parsed.map((evt) => {
+        const def = defaultById.get(evt.id);
+        if (def) {
+          return {
+            ...def,
+            ...evt,
+            coordinates: evt.coordinates || def.coordinates,
+            googleMapsUrl: evt.googleMapsUrl || def.googleMapsUrl,
+            venueDetail: evt.venueDetail || def.venueDetail,
+            image: evt.image || def.image,
+            highlights: Array.isArray(evt.highlights) && evt.highlights.length > 0 ? evt.highlights : def.highlights,
+            fullDescription: evt.fullDescription || def.fullDescription,
+            dateDisplay: evt.dateDisplay || def.dateDisplay,
+            tips: evt.tips || def.tips,
+          };
+        }
+        return {
+          ...evt,
+          coordinates: evt.coordinates || [-7.9088, 110.4150],
+          googleMapsUrl: evt.googleMapsUrl || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(evt.location || 'Desa Wisata Wukirsari Imogiri Bantul')}`,
+        };
+      });
+
+      const missingDefaults = defaultEvents.filter((de) => !parsed.some((e) => e.id === de.id));
+      return [...enriched, ...missingDefaults];
     } catch (e) {
       console.error('Failed to load events from localStorage', e);
       return defaultEvents;
+    }
+  });
+
+  const [news, setNews] = useState(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEYS.NEWS);
+      return saved ? JSON.parse(saved) : defaultNews;
+    } catch (e) {
+      console.error('Failed to load news from localStorage', e);
+      return defaultNews;
+    }
+  });
+
+  const [vrTour, setVrTour] = useState(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEYS.VR_TOUR);
+      if (!saved) return defaultVrTour;
+      const parsed = JSON.parse(saved);
+      if (parsed && Array.isArray(parsed.scenes) && parsed.scenes.length > 0) {
+        return {
+          ...defaultVrTour,
+          ...parsed,
+          scenes: parsed.scenes,
+        };
+      }
+      return defaultVrTour;
+    } catch (e) {
+      console.error('Failed to load vrTour from localStorage', e);
+      return defaultVrTour;
     }
   });
 
@@ -90,6 +158,14 @@ export const DataProvider = ({ children }) => {
       console.error('Error saving events:', e);
     }
   }, [events]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEYS.VR_TOUR, JSON.stringify(vrTour));
+    } catch (e) {
+      console.error('Error saving vrTour (mungkin melebihi kuota localStorage):', e);
+    }
+  }, [vrTour]);
 
   // Product CRUD
   const addProduct = (productData) => {
@@ -221,15 +297,118 @@ export const DataProvider = ({ children }) => {
     setEvents((prev) => prev.filter((e) => e.id !== id));
   };
 
+  // VR Tour CRUD
+  const updateVrTourConfig = (fields) => {
+    setVrTour((prev) => ({
+      ...prev,
+      ...fields,
+    }));
+  };
+
+  const addVrScene = (sceneData) => {
+    const newScene = {
+      id: sceneData.id || `scene-${Date.now()}`,
+      name: sceneData.name || 'Ruangan Baru',
+      category: sceneData.category || 'Wisata',
+      image: sceneData.image || '/images/destinasi/makam-imogiri.jpg',
+      description: sceneData.description || '',
+      initialYaw: Number(sceneData.initialYaw) || 0,
+      initialPitch: Number(sceneData.initialPitch) || 0,
+      hotspots: Array.isArray(sceneData.hotspots) ? sceneData.hotspots : [],
+    };
+    setVrTour((prev) => ({
+      ...prev,
+      startSceneId: prev.startSceneId || newScene.id,
+      scenes: [...prev.scenes, newScene],
+    }));
+    return newScene;
+  };
+
+  const updateVrScene = (sceneId, updatedFields) => {
+    setVrTour((prev) => ({
+      ...prev,
+      scenes: prev.scenes.map((s) =>
+        s.id === sceneId ? { ...s, ...updatedFields } : s
+      ),
+    }));
+  };
+
+  const deleteVrScene = (sceneId) => {
+    setVrTour((prev) => {
+      const remaining = prev.scenes
+        .filter((s) => s.id !== sceneId)
+        .map((s) => ({
+          ...s,
+          hotspots: (s.hotspots || []).filter(
+            (h) => !(h.type === 'nav' && h.targetSceneId === sceneId)
+          ),
+        }));
+      const nextStartId =
+        prev.startSceneId === sceneId
+          ? remaining[0]?.id || ''
+          : prev.startSceneId;
+      return {
+        ...prev,
+        startSceneId: nextStartId,
+        scenes: remaining,
+      };
+    });
+  };
+
+  const saveVrHotspot = (sceneId, hotspotData) => {
+    const normalizedId = hotspotData.id || `hs-${Date.now()}`;
+    const nextHotspot = {
+      ...hotspotData,
+      id: normalizedId,
+      yaw: Number(hotspotData.yaw) || 0,
+      pitch: Number(hotspotData.pitch) || 0,
+    };
+
+    setVrTour((prev) => ({
+      ...prev,
+      scenes: prev.scenes.map((scene) => {
+        if (scene.id !== sceneId) return scene;
+        const currentHotspots = scene.hotspots || [];
+        const exists = currentHotspots.some((h) => h.id === normalizedId);
+        return {
+          ...scene,
+          hotspots: exists
+            ? currentHotspots.map((h) => (h.id === normalizedId ? nextHotspot : h))
+            : [...currentHotspots, nextHotspot],
+        };
+      }),
+    }));
+
+    return nextHotspot;
+  };
+
+  const deleteVrHotspot = (sceneId, hotspotId) => {
+    setVrTour((prev) => ({
+      ...prev,
+      scenes: prev.scenes.map((scene) =>
+        scene.id === sceneId
+          ? {
+              ...scene,
+              hotspots: (scene.hotspots || []).filter((h) => h.id !== hotspotId),
+            }
+          : scene
+      ),
+    }));
+  };
+
   // Reset & Backup
   const resetToDefaults = () => {
     setProducts(defaultProducts);
     setCategories(defaultCategories);
     setEvents(defaultEvents);
+    setNews(defaultNews);
+    setVrTour(defaultVrTour);
     try {
       localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(defaultProducts));
       localStorage.setItem(STORAGE_KEYS.CATEGORIES, JSON.stringify(defaultCategories));
       localStorage.setItem(STORAGE_KEYS.EVENTS, JSON.stringify(defaultEvents));
+      localStorage.setItem(STORAGE_KEYS.NEWS, JSON.stringify(defaultNews));
+      localStorage.setItem(STORAGE_KEYS.VR_TOUR, JSON.stringify(defaultVrTour));
     } catch (e) {
       console.error(e);
     }
@@ -238,11 +417,13 @@ export const DataProvider = ({ children }) => {
   const exportDataJson = () => {
     return JSON.stringify(
       {
-        version: '1.0',
+        version: '2.1',
         exportedAt: new Date().toISOString(),
         categories,
         products,
         events,
+        news,
+        vrTour,
       },
       null,
       2
@@ -255,6 +436,8 @@ export const DataProvider = ({ children }) => {
       if (Array.isArray(data.products)) setProducts(data.products);
       if (Array.isArray(data.categories)) setCategories(data.categories);
       if (Array.isArray(data.events)) setEvents(data.events);
+      if (Array.isArray(data.news)) setNews(data.news);
+      if (data.vrTour && Array.isArray(data.vrTour.scenes)) setVrTour(data.vrTour);
       return true;
     } catch (err) {
       console.error('Invalid JSON import:', err);
@@ -266,6 +449,8 @@ export const DataProvider = ({ children }) => {
     products,
     categories,
     events,
+    news,
+    vrTour,
     getProductById,
     addProduct,
     updateProduct,
@@ -276,6 +461,12 @@ export const DataProvider = ({ children }) => {
     addEvent,
     updateEvent,
     deleteEvent,
+    updateVrTourConfig,
+    addVrScene,
+    updateVrScene,
+    deleteVrScene,
+    saveVrHotspot,
+    deleteVrHotspot,
     resetToDefaults,
     exportDataJson,
     importDataJson,
