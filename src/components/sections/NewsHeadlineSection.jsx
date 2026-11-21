@@ -17,15 +17,15 @@ import {
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { useData } from '@/context/DataContext';
-import { defaultNews } from '@/data/defaultData';
 
 const NewsHeadlineSection = () => {
   const { news } = useData();
-  const articles = Array.isArray(news) && news.length > 0 ? news : defaultNews;
+  const articles = Array.isArray(news) ? news : [];
   const [activeIndex, setActiveIndex] = useState(0);
   const [readingArticle, setReadingArticle] = useState(null);
 
   const featuredArticle = articles[activeIndex] || articles[0];
+  if (!featuredArticle) return null;
 
   return (
     <section id="berita" className="py-12 md:py-20 bg-gradient-to-b from-background via-primary/5 to-background relative overflow-hidden">

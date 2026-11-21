@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { BrainCircuit, Sparkles, Bot, ShoppingBag, X, Send } from 'lucide-react';
-import { defaultProducts as products } from '@/data/defaultData';
+import { useData } from '@/context/DataContext';
 
 const ProductCard = ({ product, onOrder }) => (
   <motion.div
@@ -72,6 +72,7 @@ const AnimatedTyping = ({ text, onComplete }) => {
 };
 
 const ProductChatbot = () => {
+  const { products } = useData();
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState([]);
   const [userInput, setUserInput] = useState('');

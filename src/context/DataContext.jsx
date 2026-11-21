@@ -1,16 +1,24 @@
-import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
-import { defaultCategories, defaultProducts, defaultEvents, defaultNews, defaultVrTour } from '@/data/defaultData';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import {
   getSupabaseConfig,
-  saveSupabaseConfig,
-  clearSupabaseConfig,
-  testSupabaseConnection,
-  fetchAppDataFromCloud,
-  saveCollectionToCloud,
-  syncAllToCloud,
-  subscribeToAppDataChanges,
+  fetchAllRelationalData,
+  dbInsertProduct,
+  dbUpdateProduct,
+  dbDeleteProduct,
+  dbInsertCategory,
+  dbUpdateCategory,
+  dbRenameProductCategory,
+  dbDeleteCategory,
+  dbInsertEvent,
+  dbUpdateEvent,
+  dbDeleteEvent,
+  dbUpdateVrTourConfig,
+  dbUpsertVrScene,
+  dbDeleteVrScene,
+  dbClearAllData,
+  dbReplaceAllData,
   uploadMediaToCloud,
-  getSetupSqlScript,
+  subscribeToRelationalChanges,
 } from '@/services/supabaseClient';
 
 const DataContext = createContext(null);
@@ -23,267 +31,113 @@ const STORAGE_KEYS = {
   VR_TOUR: 'wukirtech_vrtour_v1',
 };
 
+const EMPTY_VR_TOUR = {
+  title: 'VR Tour 360° Desa Wisata Wukirsari',
+  subtitle: 'Jelajah virtual interaktif cagar budaya dan alam Wukirsari, Imogiri',
+  theme: 'Cultural Heritage & Nature',
+  startSceneId: '',
+  scenes: [],
+};
+
+const readLocalSafe = (key, fallback) => {
+  try {
+    const raw = localStorage.getItem(key);
+    if (!raw) return fallback;
+    return JSON.parse(raw);
+  } catch (e) {
+    return fallback;
+  }
+};
+
 export const DataProvider = ({ children }) => {
-  const [products, setProducts] = useState(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEYS.PRODUCTS);
-      if (!saved) return defaultProducts;
-      const parsed = JSON.parse(saved);
-      // Jika data tersimpan masih versi lama (< 50 produk), gabungkan dengan defaultProducts baru agar 60 produk tampil lengkap
-      const merged = Array.isArray(parsed) && parsed.length >= defaultProducts.length
-        ? parsed
-        : [
-            ...parsed,
-            ...defaultProducts.filter((dp) => !parsed.some((p) => p.id === dp.id)),
-          ];
-      // Normalisasi setiap produk agar selalu memiliki images, fullDescription, dll
-      return merged.map((p) => {
-        const rawImages = Array.isArray(p.images) && p.images.length > 0
-          ? p.images
-          : (p.imageUrl ? [p.imageUrl] : ['/batik.jpg']);
-        return {
-          ...p,
-          imageUrl: p.imageUrl || rawImages[0] || '/batik.jpg',
-          images: rawImages,
-          fullDescription: p.fullDescription || p.description || '',
-          highlights: Array.isArray(p.highlights) && p.highlights.length > 0
-            ? p.highlights
-            : ['Karya Asli Pengrajin Wukirsari', 'Kualitas Terjamin', 'Mendukung Ekonomi Komunitas UMKM'],
-          specifications: Array.isArray(p.specifications) && p.specifications.length > 0
-            ? p.specifications
-            : [
-                { label: 'Kategori', value: p.category || 'UMKM Wukirsari' },
-                { label: 'Pengrajin', value: p.umkm || 'Pengrajin Lokal Wukirsari' },
-                { label: 'Status Stok', value: p.stockStatus || 'Tersedia' },
-                { label: 'Asal Wilayah', value: 'Desa Wisata Wukirsari, Imogiri, Bantul' },
-              ],
-          stockStatus: p.stockStatus || 'Tersedia',
-          rating: p.rating || 4.9,
-        };
-      });
-    } catch (e) {
-      console.error('Failed to load products from localStorage', e);
-      return defaultProducts;
-    }
-  });
+  const isCloudConfigured = getSupabaseConfig().isConfigured;
 
-  const [categories, setCategories] = useState(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEYS.CATEGORIES);
-      return saved ? JSON.parse(saved) : defaultCategories;
-    } catch (e) {
-      console.error('Failed to load categories from localStorage', e);
-      return defaultCategories;
-    }
-  });
+  const [products, setProducts] = useState(() =>
+    isCloudConfigured ? [] : readLocalSafe(STORAGE_KEYS.PRODUCTS, [])
+  );
+  const [categories, setCategories] = useState(() =>
+    isCloudConfigured ? [] : readLocalSafe(STORAGE_KEYS.CATEGORIES, [])
+  );
+  const [events, setEvents] = useState(() =>
+    isCloudConfigured ? [] : readLocalSafe(STORAGE_KEYS.EVENTS, [])
+  );
+  const [news, setNews] = useState(() =>
+    isCloudConfigured ? [] : readLocalSafe(STORAGE_KEYS.NEWS, [])
+  );
+  const [vrTour, setVrTour] = useState(() =>
+    isCloudConfigured ? EMPTY_VR_TOUR : readLocalSafe(STORAGE_KEYS.VR_TOUR, EMPTY_VR_TOUR)
+  );
+  const [isLoading, setIsLoading] = useState(isCloudConfigured);
 
-  const [events, setEvents] = useState(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEYS.EVENTS);
-      if (!saved) return defaultEvents;
-      const parsed = JSON.parse(saved);
-      if (!Array.isArray(parsed)) return defaultEvents;
-
-      // Gabungkan event baru dari defaultEvents & perkaya data lokasi/koordinat/gambar
-      const defaultById = new Map(defaultEvents.map((de) => [de.id, de]));
-      const enriched = parsed.map((evt) => {
-        const def = defaultById.get(evt.id);
-        if (def) {
-          return {
-            ...def,
-            ...evt,
-            coordinates: evt.coordinates || def.coordinates,
-            googleMapsUrl: evt.googleMapsUrl || def.googleMapsUrl,
-            venueDetail: evt.venueDetail || def.venueDetail,
-            image: evt.image || def.image,
-            highlights: Array.isArray(evt.highlights) && evt.highlights.length > 0 ? evt.highlights : def.highlights,
-            fullDescription: evt.fullDescription || def.fullDescription,
-            dateDisplay: evt.dateDisplay || def.dateDisplay,
-            tips: evt.tips || def.tips,
-          };
-        }
-        return {
-          ...evt,
-          coordinates: evt.coordinates || [-7.9088, 110.4150],
-          googleMapsUrl: evt.googleMapsUrl || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(evt.location || 'Desa Wisata Wukirsari Imogiri Bantul')}`,
-        };
-      });
-
-      const missingDefaults = defaultEvents.filter((de) => !parsed.some((e) => e.id === de.id));
-      return [...enriched, ...missingDefaults];
-    } catch (e) {
-      console.error('Failed to load events from localStorage', e);
-      return defaultEvents;
-    }
-  });
-
-  const [news, setNews] = useState(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEYS.NEWS);
-      return saved ? JSON.parse(saved) : defaultNews;
-    } catch (e) {
-      console.error('Failed to load news from localStorage', e);
-      return defaultNews;
-    }
-  });
-
-  const [vrTour, setVrTour] = useState(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEYS.VR_TOUR);
-      if (!saved) return defaultVrTour;
-      const parsed = JSON.parse(saved);
-      if (parsed && Array.isArray(parsed.scenes) && parsed.scenes.length > 0) {
-        return {
-          ...defaultVrTour,
-          ...parsed,
-          scenes: parsed.scenes,
-        };
-      }
-      return defaultVrTour;
-    } catch (e) {
-      console.error('Failed to load vrTour from localStorage', e);
-      return defaultVrTour;
-    }
-  });
-
-  // Cloud Sync State
-  const [cloudStatus, setCloudStatus] = useState('idle'); // 'idle' | 'checking' | 'connected' | 'syncing' | 'error' | 'unconfigured'
-  const [cloudMessage, setCloudMessage] = useState('');
-  const [lastCloudSync, setLastCloudSync] = useState(null);
-  const [isCloudConfigured, setIsCloudConfigured] = useState(() => getSupabaseConfig().isConfigured);
-  const isInitializedRef = useRef(false);
-  const ignoreNextSyncRef = useRef({});
-
-  // Inisialisasi koneksi Cloud & listener Realtime
-  useEffect(() => {
-    let unsubscribe = null;
-    const config = getSupabaseConfig();
-    setIsCloudConfigured(config.isConfigured);
-
-    if (!config.isConfigured) {
-      setCloudStatus('unconfigured');
-      setCloudMessage('Penyimpanan lokal aktif. Hubungkan Supabase agar data langsung terupdate ke HP teman dan seluruh internet.');
-      isInitializedRef.current = true;
+  const loadFromSupabase = useCallback(async () => {
+    if (!getSupabaseConfig().isConfigured) {
+      setIsLoading(false);
       return;
     }
+    const res = await fetchAllRelationalData();
+    if (res.ok && res.data) {
+      setCategories(res.data.categories || []);
+      setProducts(res.data.products || []);
+      setEvents(res.data.events || []);
+      setNews(res.data.news || []);
+      setVrTour(res.data.vrTour || EMPTY_VR_TOUR);
+    }
+    setIsLoading(false);
+  }, []);
 
-    setCloudStatus('checking');
-    fetchAppDataFromCloud().then((res) => {
-      if (res.ok && res.data) {
-        if (Array.isArray(res.data.products) && res.data.products.length > 0) {
-          ignoreNextSyncRef.current.products = true;
-          setProducts(res.data.products);
-        }
-        if (Array.isArray(res.data.categories) && res.data.categories.length > 0) {
-          ignoreNextSyncRef.current.categories = true;
-          setCategories(res.data.categories);
-        }
-        if (Array.isArray(res.data.events) && res.data.events.length > 0) {
-          ignoreNextSyncRef.current.events = true;
-          setEvents(res.data.events);
-        }
-        if (Array.isArray(res.data.news) && res.data.news.length > 0) {
-          ignoreNextSyncRef.current.news = true;
-          setNews(res.data.news);
-        }
-        if (res.data.vrTour && Array.isArray(res.data.vrTour.scenes) && res.data.vrTour.scenes.length > 0) {
-          ignoreNextSyncRef.current.vr_tour = true;
-          setVrTour(res.data.vrTour);
-        }
-        setCloudStatus('connected');
-        setCloudMessage('Terhubung ke Supabase Cloud. Data tersinkron online ke seluruh perangkat.');
-        setLastCloudSync(new Date().toLocaleTimeString('id-ID'));
-      } else {
-        setCloudStatus(res.error ? 'error' : 'unconfigured');
-        setCloudMessage(res.error || 'Tabel database belum dibuat di Supabase.');
-      }
-      isInitializedRef.current = true;
+  useEffect(() => {
+    loadFromSupabase();
+    const unsubscribe = subscribeToRelationalChanges(() => {
+      loadFromSupabase();
     });
-
-    // Realtime channel: ketika admin mengubah data di laptop, HP teman langsung terupdate live
-    unsubscribe = subscribeToAppDataChanges((key, data) => {
-      if (key === 'products' && Array.isArray(data)) {
-        ignoreNextSyncRef.current.products = true;
-        setProducts(data);
-      } else if (key === 'categories' && Array.isArray(data)) {
-        ignoreNextSyncRef.current.categories = true;
-        setCategories(data);
-      } else if (key === 'events' && Array.isArray(data)) {
-        ignoreNextSyncRef.current.events = true;
-        setEvents(data);
-      } else if (key === 'news' && Array.isArray(data)) {
-        ignoreNextSyncRef.current.news = true;
-        setNews(data);
-      } else if (key === 'vr_tour' && data && Array.isArray(data.scenes)) {
-        ignoreNextSyncRef.current.vr_tour = true;
-        setVrTour(data);
-      }
-      setLastCloudSync(new Date().toLocaleTimeString('id-ID'));
-    });
-
     return () => {
       if (unsubscribe) unsubscribe();
     };
-  }, [isCloudConfigured]);
+  }, [loadFromSupabase]);
 
-  // Sync to localStorage & Auto-sync ke Cloud
+  // Cache lokal hanya jika mode offline/non-Supabase agar tidak membebani kuota saat memakai Supabase
   useEffect(() => {
+    if (isCloudConfigured) return;
     try {
       localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(products));
     } catch (e) {
       console.error('Error saving products:', e);
     }
-    if (isInitializedRef.current && isCloudConfigured) {
-      if (ignoreNextSyncRef.current.products) {
-        ignoreNextSyncRef.current.products = false;
-      } else {
-        saveCollectionToCloud('products', products);
-      }
-    }
   }, [products, isCloudConfigured]);
 
   useEffect(() => {
+    if (isCloudConfigured) return;
     try {
       localStorage.setItem(STORAGE_KEYS.CATEGORIES, JSON.stringify(categories));
     } catch (e) {
       console.error('Error saving categories:', e);
     }
-    if (isInitializedRef.current && isCloudConfigured) {
-      if (ignoreNextSyncRef.current.categories) {
-        ignoreNextSyncRef.current.categories = false;
-      } else {
-        saveCollectionToCloud('categories', categories);
-      }
-    }
   }, [categories, isCloudConfigured]);
 
   useEffect(() => {
+    if (isCloudConfigured) return;
     try {
       localStorage.setItem(STORAGE_KEYS.EVENTS, JSON.stringify(events));
     } catch (e) {
       console.error('Error saving events:', e);
     }
-    if (isInitializedRef.current && isCloudConfigured) {
-      if (ignoreNextSyncRef.current.events) {
-        ignoreNextSyncRef.current.events = false;
-      } else {
-        saveCollectionToCloud('events', events);
-      }
-    }
   }, [events, isCloudConfigured]);
 
   useEffect(() => {
+    if (isCloudConfigured) return;
+    try {
+      localStorage.setItem(STORAGE_KEYS.NEWS, JSON.stringify(news));
+    } catch (e) {
+      console.error('Error saving news:', e);
+    }
+  }, [news, isCloudConfigured]);
+
+  useEffect(() => {
+    if (isCloudConfigured) return;
     try {
       localStorage.setItem(STORAGE_KEYS.VR_TOUR, JSON.stringify(vrTour));
     } catch (e) {
-      console.error('Error saving vrTour (mungkin melebihi kuota localStorage):', e);
-    }
-    if (isInitializedRef.current && isCloudConfigured) {
-      if (ignoreNextSyncRef.current.vr_tour) {
-        ignoreNextSyncRef.current.vr_tour = false;
-      } else {
-        saveCollectionToCloud('vr_tour', vrTour);
-      }
+      console.error('Error saving vrTour:', e);
     }
   }, [vrTour, isCloudConfigured]);
 
@@ -294,14 +148,18 @@ export const DataProvider = ({ children }) => {
       : (productData.imageUrl ? [productData.imageUrl] : ['/batik.jpg']);
 
     const primaryImg = rawImages[0] || productData.imageUrl || '/batik.jpg';
+    const priceNum = Number(productData.priceNum) || parseInt((productData.price || '').replace(/[^0-9]/g, ''), 10) || 0;
+    const price = productData.price || (priceNum > 0 ? `Rp${priceNum.toLocaleString('id-ID')}` : 'Hubungi Penjual');
 
     const newProduct = {
       ...productData,
       id: productData.id || `prod-${Date.now()}`,
       createdAt: new Date().toISOString(),
-      priceNum: Number(productData.priceNum) || parseInt((productData.price || '').replace(/[^0-9]/g, ''), 10) || 0,
+      price,
+      priceNum,
       imageUrl: primaryImg,
       images: rawImages,
+      qrisImage: productData.qrisImage || '',
       fullDescription: productData.fullDescription || productData.description || '',
       highlights: Array.isArray(productData.highlights) ? productData.highlights : [],
       specifications: Array.isArray(productData.specifications) ? productData.specifications : [],
@@ -309,10 +167,12 @@ export const DataProvider = ({ children }) => {
       rating: productData.rating || 4.9,
     };
     setProducts((prev) => [newProduct, ...prev]);
+    dbInsertProduct(newProduct);
     return newProduct;
   };
 
   const updateProduct = (id, updatedFields) => {
+    let updatedProductObj = null;
     setProducts((prev) =>
       prev.map((p) => {
         if (p.id === id) {
@@ -327,18 +187,28 @@ export const DataProvider = ({ children }) => {
             ...updatedFields,
             imageUrl: primaryImg,
             images: rawImages,
+            qrisImage: updatedFields.qrisImage !== undefined ? updatedFields.qrisImage : (p.qrisImage || ''),
             fullDescription: updatedFields.fullDescription !== undefined ? updatedFields.fullDescription : (p.fullDescription || p.description || ''),
             highlights: updatedFields.highlights !== undefined ? updatedFields.highlights : p.highlights,
             specifications: updatedFields.specifications !== undefined ? updatedFields.specifications : p.specifications,
           };
-          if (updatedFields.price && !updatedFields.priceNum) {
+          if (updatedFields.priceNum !== undefined) {
+            updated.priceNum = Number(updatedFields.priceNum) || 0;
+            if (!updatedFields.price && updated.priceNum > 0) {
+              updated.price = `Rp${updated.priceNum.toLocaleString('id-ID')}`;
+            }
+          } else if (updatedFields.price && !updatedFields.priceNum) {
             updated.priceNum = parseInt(String(updatedFields.price).replace(/[^0-9]/g, ''), 10) || 0;
           }
+          updatedProductObj = updated;
           return updated;
         }
         return p;
       })
     );
+    if (updatedProductObj) {
+      dbUpdateProduct(updatedProductObj);
+    }
   };
 
   const getProductById = (id) => {
@@ -348,6 +218,7 @@ export const DataProvider = ({ children }) => {
 
   const deleteProduct = (id) => {
     setProducts((prev) => prev.filter((p) => p.id !== id));
+    dbDeleteProduct(id);
   };
 
   // Category CRUD
@@ -360,24 +231,36 @@ export const DataProvider = ({ children }) => {
       badgeColor: categoryData.badgeColor || 'bg-primary/10 text-primary border-primary/30',
     };
     setCategories((prev) => [...prev, newCategory]);
+    dbInsertCategory(newCategory);
     return newCategory;
   };
 
   const updateCategory = (id, updatedFields) => {
     const target = categories.find((c) => c.id === id);
     const oldName = target ? target.name : null;
+    let updatedCat = null;
 
     setCategories((prev) =>
-      prev.map((c) => (c.id === id ? { ...c, ...updatedFields } : c))
+      prev.map((c) => {
+        if (c.id === id) {
+          updatedCat = { ...c, ...updatedFields };
+          return updatedCat;
+        }
+        return c;
+      })
     );
 
-    // If category name updated, also cascade update products using that category
+    if (updatedCat) {
+      dbUpdateCategory(updatedCat);
+    }
+
     if (oldName && updatedFields.name && oldName !== updatedFields.name) {
       setProducts((prev) =>
         prev.map((p) =>
           p.category === oldName ? { ...p, category: updatedFields.name } : p
         )
       );
+      dbRenameProductCategory(oldName, updatedFields.name);
     }
   };
 
@@ -385,15 +268,15 @@ export const DataProvider = ({ children }) => {
     const target = categories.find((c) => c.id === id);
     if (!target) return;
 
-    // Remove category
     setCategories((prev) => prev.filter((c) => c.id !== id));
+    dbDeleteCategory(id);
 
-    // Optional: Reassign affected products to another category or "Lainnya"
     setProducts((prev) =>
       prev.map((p) =>
         p.category === target.name ? { ...p, category: 'Lainnya' } : p
       )
     );
+    dbRenameProductCategory(target.name, 'Lainnya');
   };
 
   // Event / Agenda CRUD
@@ -404,25 +287,38 @@ export const DataProvider = ({ children }) => {
       status: eventData.status || 'Akan Datang',
     };
     setEvents((prev) => [newEvent, ...prev]);
+    dbInsertEvent(newEvent);
     return newEvent;
   };
 
   const updateEvent = (id, updatedFields) => {
+    let updatedEvt = null;
     setEvents((prev) =>
-      prev.map((e) => (e.id === id ? { ...e, ...updatedFields } : e))
+      prev.map((e) => {
+        if (e.id === id) {
+          updatedEvt = { ...e, ...updatedFields };
+          return updatedEvt;
+        }
+        return e;
+      })
     );
+    if (updatedEvt) {
+      dbUpdateEvent(updatedEvt);
+    }
   };
 
   const deleteEvent = (id) => {
     setEvents((prev) => prev.filter((e) => e.id !== id));
+    dbDeleteEvent(id);
   };
 
   // VR Tour CRUD
   const updateVrTourConfig = (fields) => {
-    setVrTour((prev) => ({
-      ...prev,
-      ...fields,
-    }));
+    setVrTour((prev) => {
+      const next = { ...prev, ...fields };
+      dbUpdateVrTourConfig(next);
+      return next;
+    });
   };
 
   const addVrScene = (sceneData) => {
@@ -436,21 +332,32 @@ export const DataProvider = ({ children }) => {
       initialPitch: Number(sceneData.initialPitch) || 0,
       hotspots: Array.isArray(sceneData.hotspots) ? sceneData.hotspots : [],
     };
-    setVrTour((prev) => ({
-      ...prev,
-      startSceneId: prev.startSceneId || newScene.id,
-      scenes: [...prev.scenes, newScene],
-    }));
+    setVrTour((prev) => {
+      const nextStartId = prev.startSceneId || newScene.id;
+      const nextScenes = [...prev.scenes, newScene];
+      const next = { ...prev, startSceneId: nextStartId, scenes: nextScenes };
+      dbUpsertVrScene(newScene, nextScenes.length - 1);
+      if (!prev.startSceneId) dbUpdateVrTourConfig(next);
+      return next;
+    });
     return newScene;
   };
 
   const updateVrScene = (sceneId, updatedFields) => {
-    setVrTour((prev) => ({
-      ...prev,
-      scenes: prev.scenes.map((s) =>
-        s.id === sceneId ? { ...s, ...updatedFields } : s
-      ),
-    }));
+    setVrTour((prev) => {
+      let updatedSceneObj = null;
+      let sceneIdx = 0;
+      const nextScenes = prev.scenes.map((s, idx) => {
+        if (s.id === sceneId) {
+          updatedSceneObj = { ...s, ...updatedFields };
+          sceneIdx = idx;
+          return updatedSceneObj;
+        }
+        return s;
+      });
+      if (updatedSceneObj) dbUpsertVrScene(updatedSceneObj, sceneIdx);
+      return { ...prev, scenes: nextScenes };
+    });
   };
 
   const deleteVrScene = (sceneId) => {
@@ -467,11 +374,11 @@ export const DataProvider = ({ children }) => {
         prev.startSceneId === sceneId
           ? remaining[0]?.id || ''
           : prev.startSceneId;
-      return {
-        ...prev,
-        startSceneId: nextStartId,
-        scenes: remaining,
-      };
+      const next = { ...prev, startSceneId: nextStartId, scenes: remaining };
+      dbDeleteVrScene(sceneId);
+      remaining.forEach((s, idx) => dbUpsertVrScene(s, idx));
+      if (nextStartId !== prev.startSceneId) dbUpdateVrTourConfig(next);
+      return next;
     });
   };
 
@@ -486,16 +393,18 @@ export const DataProvider = ({ children }) => {
 
     setVrTour((prev) => ({
       ...prev,
-      scenes: prev.scenes.map((scene) => {
+      scenes: prev.scenes.map((scene, idx) => {
         if (scene.id !== sceneId) return scene;
         const currentHotspots = scene.hotspots || [];
         const exists = currentHotspots.some((h) => h.id === normalizedId);
-        return {
+        const updatedScene = {
           ...scene,
           hotspots: exists
             ? currentHotspots.map((h) => (h.id === normalizedId ? nextHotspot : h))
             : [...currentHotspots, nextHotspot],
         };
+        dbUpsertVrScene(updatedScene, idx);
+        return updatedScene;
       }),
     }));
 
@@ -505,39 +414,37 @@ export const DataProvider = ({ children }) => {
   const deleteVrHotspot = (sceneId, hotspotId) => {
     setVrTour((prev) => ({
       ...prev,
-      scenes: prev.scenes.map((scene) =>
-        scene.id === sceneId
-          ? {
-              ...scene,
-              hotspots: (scene.hotspots || []).filter((h) => h.id !== hotspotId),
-            }
-          : scene
-      ),
+      scenes: prev.scenes.map((scene, idx) => {
+        if (scene.id !== sceneId) return scene;
+        const updatedScene = {
+          ...scene,
+          hotspots: (scene.hotspots || []).filter((h) => h.id !== hotspotId),
+        };
+        dbUpsertVrScene(updatedScene, idx);
+        return updatedScene;
+      }),
     }));
   };
 
-  // Reset & Backup
-  const resetToDefaults = () => {
-    setProducts(defaultProducts);
-    setCategories(defaultCategories);
-    setEvents(defaultEvents);
-    setNews(defaultNews);
-    setVrTour(defaultVrTour);
+  // Clear All & Backup
+  const resetToDefaults = async () => {
+    setProducts([]);
+    setCategories([]);
+    setEvents([]);
+    setNews([]);
+    setVrTour(EMPTY_VR_TOUR);
     try {
-      localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(defaultProducts));
-      localStorage.setItem(STORAGE_KEYS.CATEGORIES, JSON.stringify(defaultCategories));
-      localStorage.setItem(STORAGE_KEYS.EVENTS, JSON.stringify(defaultEvents));
-      localStorage.setItem(STORAGE_KEYS.NEWS, JSON.stringify(defaultNews));
-      localStorage.setItem(STORAGE_KEYS.VR_TOUR, JSON.stringify(defaultVrTour));
+      Object.values(STORAGE_KEYS).forEach((k) => localStorage.removeItem(k));
     } catch (e) {
       console.error(e);
     }
+    await dbClearAllData();
   };
 
   const exportDataJson = () => {
     return JSON.stringify(
       {
-        version: '2.1',
+        version: '3.0',
         exportedAt: new Date().toISOString(),
         categories,
         products,
@@ -553,92 +460,30 @@ export const DataProvider = ({ children }) => {
   const importDataJson = (jsonString) => {
     try {
       const data = JSON.parse(jsonString);
-      if (Array.isArray(data.products)) setProducts(data.products);
-      if (Array.isArray(data.categories)) setCategories(data.categories);
-      if (Array.isArray(data.events)) setEvents(data.events);
-      if (Array.isArray(data.news)) setNews(data.news);
-      if (data.vrTour && Array.isArray(data.vrTour.scenes)) setVrTour(data.vrTour);
+      const nextCategories = Array.isArray(data.categories) ? data.categories : categories;
+      const nextProducts = Array.isArray(data.products) ? data.products : products;
+      const nextEvents = Array.isArray(data.events) ? data.events : events;
+      const nextNews = Array.isArray(data.news) ? data.news : news;
+      const nextVrTour = data.vrTour && Array.isArray(data.vrTour.scenes) ? data.vrTour : vrTour;
+
+      setCategories(nextCategories);
+      setProducts(nextProducts);
+      setEvents(nextEvents);
+      setNews(nextNews);
+      setVrTour(nextVrTour);
+
+      dbReplaceAllData({
+        categories: nextCategories,
+        products: nextProducts,
+        events: nextEvents,
+        news: nextNews,
+        vrTour: nextVrTour,
+      });
       return true;
     } catch (err) {
       console.error('Invalid JSON import:', err);
       return false;
     }
-  };
-
-  // Cloud Sync Actions
-  const syncAllToCloudNow = async () => {
-    setCloudStatus('syncing');
-    setCloudMessage('Sedang mengunggah semua data lokal ke Supabase Cloud...');
-    const res = await syncAllToCloud({ products, categories, events, news, vrTour });
-    if (res.ok) {
-      setCloudStatus('connected');
-      setCloudMessage(res.message);
-      setLastCloudSync(new Date().toLocaleTimeString('id-ID'));
-    } else {
-      setCloudStatus('error');
-      setCloudMessage(res.message);
-    }
-    return res;
-  };
-
-  const pullFromCloudNow = async () => {
-    setCloudStatus('syncing');
-    setCloudMessage('Sedang menarik data terbaru dari Supabase Cloud...');
-    const res = await fetchAppDataFromCloud();
-    if (res.ok && res.data) {
-      if (Array.isArray(res.data.products) && res.data.products.length > 0) {
-        ignoreNextSyncRef.current.products = true;
-        setProducts(res.data.products);
-      }
-      if (Array.isArray(res.data.categories) && res.data.categories.length > 0) {
-        ignoreNextSyncRef.current.categories = true;
-        setCategories(res.data.categories);
-      }
-      if (Array.isArray(res.data.events) && res.data.events.length > 0) {
-        ignoreNextSyncRef.current.events = true;
-        setEvents(res.data.events);
-      }
-      if (Array.isArray(res.data.news) && res.data.news.length > 0) {
-        ignoreNextSyncRef.current.news = true;
-        setNews(res.data.news);
-      }
-      if (res.data.vrTour && Array.isArray(res.data.vrTour.scenes) && res.data.vrTour.scenes.length > 0) {
-        ignoreNextSyncRef.current.vr_tour = true;
-        setVrTour(res.data.vrTour);
-      }
-      setCloudStatus('connected');
-      setCloudMessage('Data berhasil diperbarui dari Cloud.');
-      setLastCloudSync(new Date().toLocaleTimeString('id-ID'));
-      return { ok: true, message: 'Data berhasil disinkronkan dari Cloud.' };
-    }
-    setCloudStatus('error');
-    setCloudMessage(res.error || 'Gagal menarik data dari Cloud.');
-    return { ok: false, message: res.error };
-  };
-
-  const configureCloudConnection = async ({ url, anonKey }) => {
-    setCloudStatus('checking');
-    setCloudMessage('Menghubungkan ke Supabase...');
-    saveSupabaseConfig({ url, anonKey });
-    const isConf = getSupabaseConfig().isConfigured;
-    setIsCloudConfigured(isConf);
-    const test = await testSupabaseConnection();
-    if (test.ok) {
-      setCloudStatus('connected');
-      setCloudMessage(test.message);
-      await pullFromCloudNow();
-    } else {
-      setCloudStatus(test.tableExists === false ? 'unconfigured' : 'error');
-      setCloudMessage(test.message);
-    }
-    return test;
-  };
-
-  const disconnectCloud = () => {
-    clearSupabaseConfig();
-    setIsCloudConfigured(false);
-    setCloudStatus('unconfigured');
-    setCloudMessage('Koneksi Supabase diputus. Menggunakan penyimpanan lokal.');
   };
 
   const uploadMedia = async (file, folder = 'vr-scenes') => {
@@ -651,18 +496,9 @@ export const DataProvider = ({ children }) => {
     events,
     news,
     vrTour,
-    // Cloud Sync
-    cloudStatus,
-    cloudMessage,
-    lastCloudSync,
+    isLoading,
     isCloudConfigured,
-    syncAllToCloudNow,
-    pullFromCloudNow,
-    configureCloudConnection,
-    disconnectCloud,
     uploadMedia,
-    getSetupSqlScript,
-    // CRUD
     getProductById,
     addProduct,
     updateProduct,

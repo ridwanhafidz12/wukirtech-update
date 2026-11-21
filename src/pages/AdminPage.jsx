@@ -33,23 +33,18 @@ import {
   Info,
   CheckCircle2,
   MapPin,
-  Cloud,
-  CloudOff,
-  RefreshCw,
-  Copy,
-  Server,
-  Wifi,
+  QrCode,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/components/ui/use-toast';
 import { useData } from '@/context/DataContext';
-import { getSupabaseConfig } from '@/services/supabaseClient';
 import Panorama360Viewer from '@/components/vr/Panorama360Viewer';
 import {
   downloadStandaloneVrHtml,
   validateAndCompressPanoramaFile,
   inspectImageUrlDimensions,
+  compressImageElementToDataUrl,
 } from '@/utils/exportVrHtml';
 import {
   Dialog,
@@ -97,17 +92,8 @@ const AdminPage = () => {
     resetToDefaults,
     exportDataJson,
     importDataJson,
-    // Cloud Sync
-    cloudStatus,
-    cloudMessage,
-    lastCloudSync,
     isCloudConfigured,
-    syncAllToCloudNow,
-    pullFromCloudNow,
-    configureCloudConnection,
-    disconnectCloud,
     uploadMedia,
-    getSetupSqlScript,
   } = useData();
 
   const { toast } = useToast();
@@ -115,11 +101,11 @@ const AdminPage = () => {
 
   const [activeTab, setActiveTab] = useState(
     () => searchParams.get('tab') || 'overview'
-  ); // overview | products | categories | events | vrtour | backup | cloud
+  ); // overview | products | categories | events | vrtour | backup
 
   useEffect(() => {
     const tabParam = searchParams.get('tab');
-    if (tabParam && ['overview', 'products', 'categories', 'events', 'vrtour', 'backup', 'cloud'].includes(tabParam)) {
+    if (tabParam && ['overview', 'products', 'categories', 'events', 'vrtour', 'backup'].includes(tabParam)) {
       setActiveTab(tabParam);
     }
   }, [searchParams]);
@@ -127,136 +113,6 @@ const AdminPage = () => {
   const handleSelectTab = (tabName) => {
     setActiveTab(tabName);
     setSearchParams(tabName === 'overview' ? {} : { tab: tabName }, { replace: true });
-  };
-
-  // Cloud Sync Form State
-  const [cloudUrlInput, setCloudUrlInput] = useState('');
-  const [cloudKeyInput, setCloudKeyInput] = useState('');
-  const [isCloudConnecting, setIsCloudConnecting] = useState(false);
-  const [isSyncingAll, setIsSyncingAll] = useState(false);
-  const [isPullingCloud, setIsPullingCloud] = useState(false);
-  const [copiedSql, setCopiedSql] = useState(false);
-
-  useEffect(() => {
-    const conf = getSupabaseConfig();
-    if (conf.url) setCloudUrlInput(conf.url);
-    if (conf.anonKey) setCloudKeyInput(conf.anonKey);
-  }, [isCloudConfigured]);
-
-  const handleSaveCloudConfig = async (e) => {
-    if (e && e.preventDefault) e.preventDefault();
-    if (!cloudUrlInput.trim() || !cloudKeyInput.trim()) {
-      toast({
-        title: 'Formulir Belum Lengkap',
-        description: 'Harap isi Project URL dan Anon Public Key dari Supabase.',
-        variant: 'destructive',
-      });
-      return;
-    }
-    setIsCloudConnecting(true);
-    try {
-      const res = await configureCloudConnection({
-        url: cloudUrlInput.trim(),
-        anonKey: cloudKeyInput.trim(),
-      });
-      if (res.ok) {
-        toast({
-          title: 'Koneksi Berhasil!',
-          description: 'Aplikasi kini terhubung ke Supabase. Data Anda siap disinkronkan ke seluruh perangkat.',
-        });
-      } else {
-        toast({
-          title: 'Koneksi Bermasalah',
-          description: res.message,
-          variant: 'destructive',
-        });
-      }
-    } catch (err) {
-      toast({
-        title: 'Gagal Menghubungkan',
-        description: err.message,
-        variant: 'destructive',
-      });
-    } finally {
-      setIsCloudConnecting(false);
-    }
-  };
-
-  const handleDisconnectCloud = () => {
-    if (window.confirm('Yakin ingin memutuskan koneksi Supabase? Aplikasi akan beralih ke penyimpanan lokal browser ini.')) {
-      disconnectCloud();
-      setCloudUrlInput('');
-      setCloudKeyInput('');
-      toast({
-        title: 'Koneksi Diputus',
-        description: 'Aplikasi sekarang menggunakan mode penyimpanan lokal.',
-      });
-    }
-  };
-
-  const handleSyncAllToCloud = async () => {
-    setIsSyncingAll(true);
-    try {
-      const res = await syncAllToCloudNow();
-      if (res.ok) {
-        toast({
-          title: 'Sinkronisasi Berhasil! 🚀',
-          description: 'Seluruh data VR Tour, 60 UMKM, dan agenda kini tersimpan di Cloud Supabase dan langsung dapat diakses oleh HP teman Anda!',
-        });
-      } else {
-        toast({
-          title: 'Gagal Menyinkronkan',
-          description: res.message,
-          variant: 'destructive',
-        });
-      }
-    } catch (err) {
-      toast({
-        title: 'Error Sinkronisasi',
-        description: err.message,
-        variant: 'destructive',
-      });
-    } finally {
-      setIsSyncingAll(false);
-    }
-  };
-
-  const handlePullFromCloud = async () => {
-    setIsPullingCloud(true);
-    try {
-      const res = await pullFromCloudNow();
-      if (res.ok) {
-        toast({
-          title: 'Data Berhasil Diperbarui',
-          description: 'Data di browser ini telah diperbarui dengan data terbaru dari Cloud Supabase.',
-        });
-      } else {
-        toast({
-          title: 'Gagal Memperbarui',
-          description: res.message,
-          variant: 'destructive',
-        });
-      }
-    } catch (err) {
-      toast({
-        title: 'Error Tarik Data',
-        description: err.message,
-        variant: 'destructive',
-      });
-    } finally {
-      setIsPullingCloud(false);
-    }
-  };
-
-  const handleCopySql = () => {
-    const sql = getSetupSqlScript();
-    navigator.clipboard.writeText(sql);
-    setCopiedSql(true);
-    toast({
-      title: 'Skrip SQL Tersalin!',
-      description: 'Tempelkan skrip ini ke Supabase Dashboard -> SQL Editor lalu klik Run.',
-    });
-    setTimeout(() => setCopiedSql(false), 3000);
   };
 
   // Product Filter & Form State
@@ -274,6 +130,7 @@ const AdminPage = () => {
     fullDescription: '',
     imageUrl: '',
     images: [],
+    qrisImage: '',
     imageAlt: '',
     isNew: false,
     phone: '628816413617',
@@ -389,6 +246,7 @@ const AdminPage = () => {
       fullDescription: '',
       imageUrl: '/batik.jpg',
       images: ['/batik.jpg'],
+      qrisImage: '',
       imageAlt: '',
       isNew: true,
       phone: '628816413617',
@@ -422,6 +280,7 @@ const AdminPage = () => {
       fullDescription: prod.fullDescription || prod.description || '',
       imageUrl: prod.imageUrl || rawImages[0] || '',
       images: rawImages,
+      qrisImage: prod.qrisImage || '',
       imageAlt: prod.imageAlt || '',
       isNew: Boolean(prod.isNew),
       phone: prod.phone || '628816413617',
@@ -455,6 +314,91 @@ const AdminPage = () => {
       imageUrl: productForm.imageUrl || url,
     });
     setNewImageInput('');
+  };
+
+  const readAndCompressImage = (file, maxWidth = 1000, quality = 0.85) =>
+    new Promise((resolve, reject) => {
+      if (!file || !file.type.startsWith('image/')) {
+        reject(new Error('File harus berupa gambar (JPG, PNG, WebP).'));
+        return;
+      }
+      const reader = new FileReader();
+      reader.onerror = () => reject(new Error('Gagal membaca file gambar.'));
+      reader.onload = (ev) => {
+        const img = new Image();
+        img.onerror = () => reject(new Error('Format gambar rusak atau tidak didukung.'));
+        img.onload = () => {
+          resolve(compressImageElementToDataUrl(img, maxWidth, quality));
+        };
+        img.src = ev.target.result;
+      };
+      reader.readAsDataURL(file);
+    });
+
+  const handleUploadProductPhotoFile = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      let finalUrl = await readAndCompressImage(file, 1200, 0.85);
+      let cloudUploaded = false;
+      if (isCloudConfigured) {
+        const res = await uploadMedia(file, 'products');
+        if (res && res.ok && res.publicUrl) {
+          finalUrl = res.publicUrl;
+          cloudUploaded = true;
+        }
+      }
+      setProductForm((prev) => {
+        const currentImgs = Array.isArray(prev.images) ? prev.images : [];
+        const updatedImages = [...currentImgs, finalUrl];
+        return {
+          ...prev,
+          images: updatedImages,
+          imageUrl: prev.imageUrl || finalUrl,
+        };
+      });
+      toast({
+        title: cloudUploaded ? 'Foto Produk Diunggah ke Cloud CDN' : 'Foto Produk Ditambahkan',
+        description: 'Foto berhasil ditambahkan ke galeri produk.',
+      });
+    } catch (err) {
+      toast({
+        title: 'Gagal Mengunggah Foto',
+        description: err.message,
+        variant: 'destructive',
+      });
+    } finally {
+      e.target.value = '';
+    }
+  };
+
+  const handleUploadProductQrisFile = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      let finalUrl = await readAndCompressImage(file, 800, 0.92);
+      let cloudUploaded = false;
+      if (isCloudConfigured) {
+        const res = await uploadMedia(file, 'qris');
+        if (res && res.ok && res.publicUrl) {
+          finalUrl = res.publicUrl;
+          cloudUploaded = true;
+        }
+      }
+      setProductForm((prev) => ({ ...prev, qrisImage: finalUrl }));
+      toast({
+        title: cloudUploaded ? 'QR Pembayaran Diunggah ke Cloud CDN' : 'QR Pembayaran Dimuat',
+        description: 'QRIS khusus produk/UMKM ini siap digunakan untuk pembayaran pembeli.',
+      });
+    } catch (err) {
+      toast({
+        title: 'Gagal Mengunggah QRIS',
+        description: err.message,
+        variant: 'destructive',
+      });
+    } finally {
+      e.target.value = '';
+    }
   };
 
   const handleRemoveImageFromGallery = (indexToRemove) => {
@@ -533,9 +477,11 @@ const AdminPage = () => {
 
     const payload = {
       ...productForm,
+      price: productForm.price?.trim() || (priceNum > 0 ? `Rp${priceNum.toLocaleString('id-ID')}` : 'Hubungi Penjual'),
       priceNum,
       images: finalImages,
       imageUrl: finalImages[0] || productForm.imageUrl || '/batik.jpg',
+      qrisImage: (productForm.qrisImage || '').trim(),
       highlights: parsedHighlights,
       fullDescription: productForm.fullDescription || productForm.description,
       imageAlt: productForm.imageAlt || productForm.name,
@@ -955,12 +901,12 @@ const AdminPage = () => {
     }
   };
 
-  const handleResetData = () => {
-    if (window.confirm('Apakah Anda yakin ingin mereset seluruh data kembali ke data default pabrik? Perubahan kustom akan ditimpa.')) {
-      resetToDefaults();
+  const handleResetData = async () => {
+    if (window.confirm('Apakah Anda yakin ingin menghapus SELURUH data produk, kategori, agenda, berita, dan VR Tour secara permanen dari database?')) {
+      await resetToDefaults();
       toast({
-        title: 'Data Direset',
-        description: 'Semua data kembali ke konfigurasi awal bawaan WukirTech.',
+        title: 'Seluruh Data Dihapus',
+        description: 'Semua data telah dikosongkan. Anda dapat menginput ulang melalui file supabase_database.sql di Supabase atau Import JSON.',
       });
     }
   };
@@ -1109,30 +1055,6 @@ const AdminPage = () => {
             >
               <Database className="w-4 h-4" />
               <span>Cadangan & Reset</span>
-            </button>
-
-            <button
-              onClick={() => handleSelectTab('cloud')}
-              className={`px-4 py-2.5 rounded-xl text-xs md:text-sm font-semibold transition-all flex items-center gap-2 whitespace-nowrap ${
-                activeTab === 'cloud'
-                  ? 'bg-primary text-primary-foreground shadow-md shadow-primary/20'
-                  : 'bg-card/70 hover:bg-secondary text-muted-foreground'
-              }`}
-            >
-              <Cloud className="w-4 h-4" />
-              <span>Sinkronisasi Cloud</span>
-              <span
-                className={`w-2 h-2 rounded-full ${
-                  isCloudConfigured && cloudStatus === 'connected'
-                    ? 'bg-emerald-400 animate-pulse'
-                    : 'bg-amber-400'
-                }`}
-                title={
-                  isCloudConfigured && cloudStatus === 'connected'
-                    ? 'Online & Sinkron'
-                    : 'Mode Lokal'
-                }
-              />
             </button>
           </div>
 
@@ -2036,335 +1958,18 @@ const AdminPage = () => {
                     <RotateCcw className="w-5 h-5" />
                   </div>
                   <div>
-                    <h3 className="text-base font-bold text-destructive">Kembalikan ke Data Awal Pabrik</h3>
+                    <h3 className="text-base font-bold text-destructive">Kosongkan Seluruh Data Database</h3>
                     <p className="text-xs text-muted-foreground">
-                      Hapus semua perubahan lokal dan pulihkan kembali 10 produk dan 5 kategori default Wukirsari.
+                      Hapus seluruh produk, kategori, agenda, berita, dan ruangan VR Tour secara permanen dari database.
                     </p>
                   </div>
                 </div>
                 <p className="text-xs text-muted-foreground mb-4">
-                  Tindakan ini akan mengosongkan perubahan lokal yang telah Anda buat di localStorage.
+                  Untuk mengisi kembali data awal, jalankan ulang file <code>supabase_database.sql</code> di Supabase SQL Editor atau impor file JSON cadangan Anda.
                 </p>
                 <Button onClick={handleResetData} variant="destructive" size="sm" className="text-xs font-semibold">
-                  <RotateCcw className="w-3.5 h-3.5 mr-1.5" /> Reset Seluruh Data Sekarang
+                  <RotateCcw className="w-3.5 h-3.5 mr-1.5" /> Hapus Seluruh Data Sekarang
                 </Button>
-              </div>
-            </motion.div>
-          )}
-
-          {/* ================= TAB 6: SINKRONISASI CLOUD (MULTI-DEVICE) ================= */}
-          {activeTab === 'cloud' && (
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-8 max-w-4xl mx-auto">
-              {/* Status Banner */}
-              <div
-                className={`p-6 rounded-2xl border transition-all ${
-                  isCloudConfigured && cloudStatus === 'connected'
-                    ? 'bg-emerald-500/10 border-emerald-500/30'
-                    : 'bg-amber-500/10 border-amber-500/30'
-                }`}
-              >
-                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                  <div className="flex items-center gap-3">
-                    <div
-                      className={`p-3 rounded-xl ${
-                        isCloudConfigured && cloudStatus === 'connected'
-                          ? 'bg-emerald-500/20 text-emerald-400'
-                          : 'bg-amber-500/20 text-amber-400'
-                      }`}
-                    >
-                      {isCloudConfigured && cloudStatus === 'connected' ? (
-                        <Wifi className="w-6 h-6 animate-pulse" />
-                      ) : (
-                        <CloudOff className="w-6 h-6" />
-                      )}
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <h3 className="text-base font-bold text-foreground">
-                          {isCloudConfigured && cloudStatus === 'connected'
-                            ? 'Online • Terhubung ke Database Cloud (Supabase)'
-                            : 'Mode Penyimpanan Lokal (Belum Tersinkron ke Internet)'}
-                        </h3>
-                        <span
-                          className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
-                            isCloudConfigured && cloudStatus === 'connected'
-                              ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
-                              : 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
-                          }`}
-                        >
-                          {isCloudConfigured && cloudStatus === 'connected' ? 'Multi-Device Aktif' : 'Device Ini Saja'}
-                        </span>
-                      </div>
-                      <p className="text-xs text-muted-foreground mt-1 max-w-xl">
-                        {isCloudConfigured && cloudStatus === 'connected'
-                          ? 'Perubahan produk, agenda, dan VR Tour yang Anda edit di laptop ini otomatis terupdate ke HP teman, keluarga, maupun seluruh pengunjung website melalui internet secara real-time.'
-                          : 'Saat ini data baru tersimpan di browser laptop ini (localStorage). Agar HP teman dapat melihat VR Tour & data terbaru, hubungkan ke proyek database gratis Supabase di bawah.'}
-                      </p>
-                    </div>
-                  </div>
-
-                  {lastCloudSync && (
-                    <div className="text-left sm:text-right flex-shrink-0">
-                      <span className="text-[10px] uppercase font-semibold text-muted-foreground block">
-                        Sinkronisasi Terakhir
-                      </span>
-                      <span className="text-xs font-mono font-bold text-foreground">
-                        {lastCloudSync}
-                      </span>
-                    </div>
-                  )}
-                </div>
-
-                {cloudMessage && (
-                  <div className="mt-4 pt-3 border-t border-border/20 text-xs text-muted-foreground flex items-center gap-1.5">
-                    <Info className="w-3.5 h-3.5 text-primary flex-shrink-0" />
-                    <span>{cloudMessage}</span>
-                  </div>
-                )}
-              </div>
-
-              {/* Card 1: Aksi Cepat Sinkronisasi Multi-Device */}
-              <div className="bg-card/80 border border-border/30 rounded-2xl p-6 shadow-sm">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="p-2.5 rounded-xl bg-primary/10 text-primary">
-                    <RefreshCw className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <h3 className="text-base font-bold text-foreground">
-                      Sinkronisasi Data Multi-Device
-                    </h3>
-                    <p className="text-xs text-muted-foreground">
-                      Kirim data yang telah Anda sesuaikan di laptop ini ke Cloud agar langsung tampil di HP teman.
-                    </p>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="p-4 rounded-xl border border-border/30 bg-secondary/20 flex flex-col justify-between">
-                    <div>
-                      <h4 className="text-sm font-bold text-foreground mb-1">
-                        🚀 Kirim Data Laptop ke Cloud (Sync Up)
-                      </h4>
-                      <p className="text-xs text-muted-foreground mb-4">
-                        Mengunggah semua scene VR Tour ({vrScenes.length} titik), {products.length} produk UMKM, dan agenda acara dari laptop ini ke Supabase.
-                      </p>
-                    </div>
-                    <Button
-                      onClick={handleSyncAllToCloud}
-                      disabled={isSyncingAll || !isCloudConfigured}
-                      className="w-full bg-primary text-primary-foreground font-semibold text-xs"
-                    >
-                      {isSyncingAll ? (
-                        <>
-                          <RefreshCw className="w-3.5 h-3.5 mr-1.5 animate-spin" />
-                          Mengunggah ke Cloud...
-                        </>
-                      ) : (
-                        <>
-                          <Upload className="w-3.5 h-3.5 mr-1.5" />
-                          Kirim Data Laptop ke Cloud Sekarang
-                        </>
-                      )}
-                    </Button>
-                  </div>
-
-                  <div className="p-4 rounded-xl border border-border/30 bg-secondary/20 flex flex-col justify-between">
-                    <div>
-                      <h4 className="text-sm font-bold text-foreground mb-1">
-                        📥 Tarik Data dari Cloud (Sync Down)
-                      </h4>
-                      <p className="text-xs text-muted-foreground mb-4">
-                        Memperbarui browser ini dengan data terbaru yang tersimpan di Cloud Supabase.
-                      </p>
-                    </div>
-                    <Button
-                      onClick={handlePullFromCloud}
-                      disabled={isPullingCloud || !isCloudConfigured}
-                      variant="outline"
-                      className="w-full text-xs font-semibold"
-                    >
-                      {isPullingCloud ? (
-                        <>
-                          <RefreshCw className="w-3.5 h-3.5 mr-1.5 animate-spin" />
-                          Menarik Data...
-                        </>
-                      ) : (
-                        <>
-                          <Download className="w-3.5 h-3.5 mr-1.5" />
-                          Tarik Data Terbaru dari Cloud
-                        </>
-                      )}
-                    </Button>
-                  </div>
-                </div>
-              </div>
-
-              {/* Card 2: Pengaturan Database Supabase */}
-              <div className="bg-card/80 border border-border/30 rounded-2xl p-6 shadow-sm">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-400">
-                    <Server className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <h3 className="text-base font-bold text-foreground">
-                      Pengaturan Akun Supabase
-                    </h3>
-                    <p className="text-xs text-muted-foreground">
-                      Kredensial disimpan aman di konfigurasi proyek Anda agar seluruh pengunjung terhubung ke database yang sama.
-                    </p>
-                  </div>
-                </div>
-
-                <form onSubmit={handleSaveCloudConfig} className="space-y-4">
-                  <div>
-                    <label className="text-xs font-semibold text-foreground mb-1 block">
-                      Supabase Project URL
-                    </label>
-                    <Input
-                      type="url"
-                      placeholder="https://your-project-id.supabase.co"
-                      value={cloudUrlInput}
-                      onChange={(e) => setCloudUrlInput(e.target.value)}
-                      className="text-xs font-mono"
-                    />
-                    <p className="text-[11px] text-muted-foreground mt-1">
-                      Didapatkan dari: Supabase Dashboard &gt; Project Settings &gt; API &gt; Project URL
-                    </p>
-                  </div>
-
-                  <div>
-                    <label className="text-xs font-semibold text-foreground mb-1 block">
-                      Supabase Anon Public Key (API Key)
-                    </label>
-                    <Input
-                      type="password"
-                      placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-                      value={cloudKeyInput}
-                      onChange={(e) => setCloudKeyInput(e.target.value)}
-                      className="text-xs font-mono"
-                    />
-                    <p className="text-[11px] text-muted-foreground mt-1">
-                      Didapatkan dari: Supabase Dashboard &gt; Project Settings &gt; API &gt; Project API Keys (anon public)
-                    </p>
-                  </div>
-
-                  <div className="flex flex-wrap items-center gap-3 pt-2">
-                    <Button
-                      type="submit"
-                      disabled={isCloudConnecting}
-                      className="bg-primary text-primary-foreground font-semibold text-xs"
-                    >
-                      {isCloudConnecting ? (
-                        <>
-                          <RefreshCw className="w-3.5 h-3.5 mr-1.5 animate-spin" />
-                          Menghubungkan...
-                        </>
-                      ) : (
-                        <>
-                          <Check className="w-3.5 h-3.5 mr-1.5" />
-                          Tes Koneksi &amp; Simpan
-                        </>
-                      )}
-                    </Button>
-
-                    {isCloudConfigured && (
-                      <Button
-                        type="button"
-                        onClick={handleDisconnectCloud}
-                        variant="destructive"
-                        className="text-xs font-semibold"
-                      >
-                        <CloudOff className="w-3.5 h-3.5 mr-1.5" />
-                        Putuskan Koneksi
-                      </Button>
-                    )}
-                  </div>
-                </form>
-              </div>
-
-              {/* Card 3: Panduan 1-Menit Setup Supabase & Skrip SQL */}
-              <div className="bg-card/80 border border-border/30 rounded-2xl p-6 shadow-sm">
-                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-4">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2.5 rounded-xl bg-purple-500/10 text-purple-400">
-                      <Database className="w-5 h-5" />
-                    </div>
-                    <div>
-                      <h3 className="text-base font-bold text-foreground">
-                        Panduan Setup Supabase (Gratis &amp; 1-Menit Selesai)
-                      </h3>
-                      <p className="text-xs text-muted-foreground">
-                        Belum punya database? Ikuti 3 langkah cepat ini tanpa biaya apa pun.
-                      </p>
-                    </div>
-                  </div>
-
-                  <Button
-                    type="button"
-                    onClick={handleCopySql}
-                    variant="outline"
-                    className="text-xs font-semibold flex-shrink-0"
-                  >
-                    {copiedSql ? (
-                      <>
-                        <Check className="w-3.5 h-3.5 mr-1.5 text-emerald-400" />
-                        Skrip SQL Tersalin!
-                      </>
-                    ) : (
-                      <>
-                        <Copy className="w-3.5 h-3.5 mr-1.5" />
-                        Salin Skrip SQL Otomatis
-                      </>
-                    )}
-                  </Button>
-                </div>
-
-                <div className="space-y-3 text-xs text-muted-foreground">
-                  <div className="flex items-start gap-3 p-3 rounded-xl bg-secondary/30">
-                    <span className="w-5 h-5 rounded-full bg-primary/20 text-primary flex items-center justify-center font-bold text-[11px] flex-shrink-0">
-                      1
-                    </span>
-                    <div>
-                      <strong className="text-foreground">Buat Proyek Baru di Supabase</strong>
-                      <p className="mt-0.5">
-                        Buka{' '}
-                        <a
-                          href="https://supabase.com"
-                          target="_blank"
-                          rel="noreferrer"
-                          className="text-primary underline font-medium"
-                        >
-                          supabase.com
-                        </a>
-                        , klik <em>Start your project</em> (Gratis). Beri nama (misal: <code>wukirtech-db</code>) dan pilih Region <strong>Singapore</strong> agar koneksi dari Indonesia sangat cepat.
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-start gap-3 p-3 rounded-xl bg-secondary/30">
-                    <span className="w-5 h-5 rounded-full bg-primary/20 text-primary flex items-center justify-center font-bold text-[11px] flex-shrink-0">
-                      2
-                    </span>
-                    <div>
-                      <strong className="text-foreground">Jalankan Skrip SQL</strong>
-                      <p className="mt-0.5">
-                        Buka menu <strong>SQL Editor</strong> di dashboard Supabase Anda, klik <em>New query</em>, tempel skrip dari tombol <strong>"Salin Skrip SQL Otomatis"</strong> di atas, lalu klik <strong>Run</strong>. (Tabel <code>wukirtech_app_data</code> dan Storage <code>wukirtech-media</code> akan dibuat otomatis).
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-start gap-3 p-3 rounded-xl bg-secondary/30">
-                    <span className="w-5 h-5 rounded-full bg-primary/20 text-primary flex items-center justify-center font-bold text-[11px] flex-shrink-0">
-                      3
-                    </span>
-                    <div>
-                      <strong className="text-foreground">Salin URL &amp; Key ke Form di Atas</strong>
-                      <p className="mt-0.5">
-                        Masuk ke <strong>Project Settings &gt; API</strong>, salin <em>Project URL</em> dan <em>Project API Keys (anon public)</em>, lalu tempel pada formulir di atas dan klik <strong>Tes Koneksi &amp; Simpan</strong>. Setelah itu klik tombol <strong>"Kirim Data Laptop ke Cloud Sekarang"</strong>.
-                      </p>
-                    </div>
-                  </div>
-                </div>
               </div>
             </motion.div>
           )}
@@ -2442,25 +2047,44 @@ const AdminPage = () => {
                 </div>
 
                 <div>
-                  <label className="text-xs font-semibold text-foreground mb-1 block">Tampilan Harga (Teks) *</label>
-                  <Input
-                    required
-                    placeholder="Contoh: Rp750.000 atau Rp20.000 / bungkus"
-                    value={productForm.price}
-                    onChange={(e) => setProductForm({ ...productForm, price: e.target.value })}
-                    className="text-xs h-9"
-                  />
-                </div>
-
-                <div>
                   <label className="text-xs font-semibold text-foreground mb-1 block">
-                    Harga Angka (Untuk Filter & Urutan)
+                    Patokan Harga Awal (Rp) *
                   </label>
                   <Input
                     type="number"
-                    placeholder="750000"
+                    min="0"
+                    placeholder="Contoh: 150000"
                     value={productForm.priceNum || ''}
-                    onChange={(e) => setProductForm({ ...productForm, priceNum: Number(e.target.value) })}
+                    onChange={(e) => {
+                      const num = Number(e.target.value) || 0;
+                      setProductForm((prev) => ({
+                        ...prev,
+                        priceNum: num,
+                        price: num > 0 ? `Rp${num.toLocaleString('id-ID')}` : '',
+                      }));
+                    }}
+                    className="text-xs h-9"
+                  />
+                  <span className="text-[10px] text-muted-foreground mt-0.5 block">
+                    Otomatis memformat tampilan harga &amp; kalkulator pesanan.
+                  </span>
+                </div>
+
+                <div>
+                  <label className="text-xs font-semibold text-foreground mb-1 block">Tampilan Harga (Teks) *</label>
+                  <Input
+                    required
+                    placeholder="Contoh: Rp150.000 atau Rp20.000 / pcs"
+                    value={productForm.price}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      const parsed = parseInt(String(val).replace(/[^0-9]/g, ''), 10) || 0;
+                      setProductForm((prev) => ({
+                        ...prev,
+                        price: val,
+                        priceNum: parsed || prev.priceNum,
+                      }));
+                    }}
                     className="text-xs h-9"
                   />
                 </div>
@@ -2496,8 +2120,8 @@ const AdminPage = () => {
                 <span className="text-[11px] text-muted-foreground">Foto pertama akan menjadi foto sampul/cover</span>
               </div>
 
-              {/* Input URL Gambar Baru */}
-              <div className="flex gap-2">
+              {/* Input URL Gambar Baru + Unggah File */}
+              <div className="flex flex-wrap gap-2">
                 <Input
                   placeholder="URL gambar (https://...)"
                   value={newImageInput}
@@ -2508,7 +2132,7 @@ const AdminPage = () => {
                       handleAddImageToGallery();
                     }
                   }}
-                  className="text-xs h-9 flex-grow"
+                  className="text-xs h-9 flex-grow min-w-[180px]"
                 />
                 <Button
                   type="button"
@@ -2516,8 +2140,17 @@ const AdminPage = () => {
                   onClick={() => handleAddImageToGallery()}
                   className="h-9 px-3.5 text-xs bg-primary text-primary-foreground font-semibold flex items-center gap-1"
                 >
-                  <Plus className="w-3.5 h-3.5" /> Tambah Foto
+                  <Plus className="w-3.5 h-3.5" /> Tambah URL
                 </Button>
+                <label className="h-9 px-3.5 rounded-md border border-primary/40 bg-primary/10 text-primary hover:bg-primary/20 text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition-colors">
+                  <Upload className="w-3.5 h-3.5" /> Unggah Foto
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleUploadProductPhotoFile}
+                    className="hidden"
+                  />
+                </label>
               </div>
 
               {/* Preset Tombol Cepat */}
@@ -2543,7 +2176,10 @@ const AdminPage = () => {
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-1">
                   {productForm.images.map((imgUrl, idx) => {
                     const isCover = idx === 0 || imgUrl === productForm.imageUrl;
-                    const formatted = imgUrl.startsWith('/') || imgUrl.startsWith('http') ? imgUrl : `/${imgUrl}`;
+                    const formatted =
+                      imgUrl.startsWith('/') || imgUrl.startsWith('http') || imgUrl.startsWith('data:')
+                        ? imgUrl
+                        : `/${imgUrl}`;
                     return (
                       <div
                         key={idx}
@@ -2603,10 +2239,81 @@ const AdminPage = () => {
               )}
             </div>
 
-            {/* 3. DESKRIPSI & CERITA PRODUK */}
+            {/* 3. QR PEMBAYARAN TERPISAH PER UMKM / PRODUK */}
+            <div className="space-y-3 pt-3 border-t border-border/20">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <h4 className="text-xs font-bold uppercase tracking-wider text-primary flex items-center gap-1.5">
+                  <QrCode className="w-3.5 h-3.5" /> 3. QR Pembayaran Khusus UMKM / Produk (QRIS)
+                </h4>
+                <span className="text-[11px] text-muted-foreground">
+                  Opsional — kosongkan jika memakai QRIS default desa
+                </span>
+              </div>
+
+              <div className="flex flex-col sm:flex-row gap-4 items-start p-3.5 rounded-xl bg-secondary/20 border border-border/30">
+                <div className="w-28 h-28 rounded-xl bg-white p-1.5 border border-border/40 flex items-center justify-center flex-shrink-0 overflow-hidden shadow-sm">
+                  {productForm.qrisImage ? (
+                    <img
+                      src={
+                        productForm.qrisImage.startsWith('/') ||
+                        productForm.qrisImage.startsWith('http') ||
+                        productForm.qrisImage.startsWith('data:')
+                          ? productForm.qrisImage
+                          : `/${productForm.qrisImage}`
+                      }
+                      alt="Pratinjau QRIS UMKM"
+                      className="w-full h-full object-contain rounded-lg"
+                    />
+                  ) : (
+                    <div className="text-center text-muted-foreground px-1">
+                      <QrCode className="w-8 h-8 mx-auto opacity-40 mb-1" />
+                      <span className="text-[10px] leading-tight block">QRIS Default</span>
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex-1 w-full space-y-2.5">
+                  <div className="flex flex-wrap gap-2">
+                    <label className="h-9 px-3.5 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition-colors">
+                      <Upload className="w-3.5 h-3.5" /> Unggah QRIS UMKM
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleUploadProductQrisFile}
+                        className="hidden"
+                      />
+                    </label>
+                    {productForm.qrisImage && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setProductForm((prev) => ({ ...prev, qrisImage: '' }))}
+                        className="h-9 text-xs text-rose-500 border-rose-500/30 hover:bg-rose-500/10"
+                      >
+                        <Trash2 className="w-3.5 h-3.5 mr-1" /> Hapus QR Khusus
+                      </Button>
+                    )}
+                  </div>
+
+                  <Input
+                    placeholder="Atau tempel URL gambar QRIS (https://...)"
+                    value={productForm.qrisImage || ''}
+                    onChange={(e) => setProductForm((prev) => ({ ...prev, qrisImage: e.target.value }))}
+                    className="text-xs h-9"
+                  />
+                  <p className="text-[11px] text-muted-foreground">
+                    Pembeli yang mengklik <strong>Bayar via QRIS</strong> pada produk ini akan melihat kode QR milik{' '}
+                    <strong>{productForm.umkm || 'UMKM ini'}</strong> secara langsung.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* 4. DESKRIPSI & CERITA PRODUK */}
             <div className="space-y-3 pt-3 border-t border-border/20">
               <h4 className="text-xs font-bold uppercase tracking-wider text-primary flex items-center gap-1.5">
-                <Sparkles className="w-3.5 h-3.5" /> 3. Deskripsi & Kisah Filosofi
+                <Sparkles className="w-3.5 h-3.5" /> 4. Deskripsi & Kisah Filosofi
               </h4>
 
               <div>
@@ -2655,7 +2362,7 @@ const AdminPage = () => {
             <div className="space-y-3 pt-3 border-t border-border/20">
               <div className="flex items-center justify-between">
                 <h4 className="text-xs font-bold uppercase tracking-wider text-primary flex items-center gap-1.5">
-                  <FolderTree className="w-3.5 h-3.5" /> 4. Tabel Spesifikasi Produk
+                  <FolderTree className="w-3.5 h-3.5" /> 5. Tabel Spesifikasi Produk
                 </h4>
                 <Button
                   type="button"

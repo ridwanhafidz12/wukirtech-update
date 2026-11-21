@@ -18,8 +18,19 @@ import {
   TabsTrigger,
 } from '@/components/ui/tabs';
 
+const formatAssetUrl = (url, fallback = '/batik.jpg') => {
+  if (!url) return fallback;
+  if (url.startsWith('/') || url.startsWith('http') || url.startsWith('data:')) {
+    return url;
+  }
+  return `/${url}`;
+};
+
 export const PaymentModal = ({ product, isOpen, onClose }) => {
   if (!product) return null;
+
+  const qrisSrc = formatAssetUrl(product.qrisImage, '/qris.jpg');
+  const hasCustomQris = Boolean(product.qrisImage && product.qrisImage.trim());
 
   const handleWhatsAppOrder = () => {
     const phoneNumber = product.phone || '628816413617';
@@ -82,14 +93,23 @@ export const PaymentModal = ({ product, isOpen, onClose }) => {
           </TabsContent>
 
           <TabsContent value="qris" className="mt-4 p-4 bg-secondary/40 rounded-xl border border-border/20 text-center">
+            <div className="mb-2">
+              <span className={`inline-block px-2.5 py-0.5 rounded-full text-[11px] font-semibold ${
+                hasCustomQris
+                  ? 'bg-emerald-500/15 text-emerald-500 border border-emerald-500/30'
+                  : 'bg-primary/15 text-primary border border-primary/30'
+              }`}>
+                {hasCustomQris ? `QRIS Resmi ${product.umkm || 'UMKM'}` : 'QRIS Terpadu WukirTech'}
+              </span>
+            </div>
             <p className="text-sm text-muted-foreground mb-4">
               Pindai kode QRIS di bawah ini dengan aplikasi perbankan atau e-wallet (BCA, Mandiri, GoPay, OVO, ShopeePay, Dana).
             </p>
             <div className="flex justify-center p-2 bg-white rounded-xl inline-block mx-auto shadow-inner">
               <img
                 className="w-44 h-44 object-contain rounded-md"
-                alt="QRIS WukirTech"
-                src="/qris.jpg"
+                alt={`QRIS ${product.umkm || 'WukirTech'}`}
+                src={qrisSrc}
                 onError={(e) => {
                   e.target.src = 'https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=WUKIRTECH-ORDER';
                 }}
@@ -125,9 +145,7 @@ export const ProductCard = ({ product, onSelect }) => {
     : (product.imageUrl ? [product.imageUrl] : ['/batik.jpg']);
 
   const displayImage = imageList[0] || product.imageUrl || '/batik.jpg';
-  const formattedImage = displayImage.startsWith('/') || displayImage.startsWith('http')
-    ? displayImage
-    : `/${displayImage}`;
+  const formattedImage = formatAssetUrl(displayImage, '/batik.jpg');
 
   return (
     <>

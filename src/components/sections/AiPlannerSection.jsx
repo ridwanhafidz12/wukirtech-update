@@ -6,7 +6,7 @@ import { BrainCircuit, Sparkles, Bot, Wand2, Mountain, Utensils, Palette, Shoppi
 import { cn } from '@/lib/utils';
 
 // Data UMKM dan Produk
-import { defaultProducts as products } from '@/data/defaultData';
+import { useData } from '@/context/DataContext';
 
 const umkmData = [
   { name: 'Kerajinan', value: 24, color: 'hsl(var(--primary))' },
@@ -819,6 +819,7 @@ const AiResponseVisualizer = ({ response, onOrderClick }) => {
 };
 
 const AiPlannerSection = () => {
+  const { products } = useData();
   const [aiInput, setAiInput] = useState('');
   const [aiResponse, setAiResponse] = useState('');
   const [isAiLoading, setIsAiLoading] = useState(false);

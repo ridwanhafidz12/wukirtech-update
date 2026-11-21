@@ -98,7 +98,7 @@ const ProductDetailPage = () => {
     : (product.imageUrl ? [product.imageUrl] : ['/batik.jpg']);
 
   const images = rawImages.map((img) =>
-    img.startsWith('/') || img.startsWith('http') ? img : `/${img}`
+    img.startsWith('/') || img.startsWith('http') || img.startsWith('data:') ? img : `/${img}`
   );
 
   const currentImage = images[activeImageIndex] || images[0] || '/batik.jpg';
