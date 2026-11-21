@@ -9,10 +9,10 @@ import { cn } from '@/lib/utils';
 import { defaultProducts as products } from '@/data/defaultData';
 
 const umkmData = [
-  { name: 'Kerajinan', value: 45, color: 'hsl(var(--primary))' },
-  { name: 'Kuliner', value: 35, color: 'hsl(80, 70%, 50%)' },
-  { name: 'Jasa & Akomodasi', value: 15, color: 'hsl(140, 50%, 60%)' },
-  { name: 'Agrowisata', value: 12, color: 'hsl(40, 60%, 60%)' },
+  { name: 'Kerajinan', value: 24, color: 'hsl(var(--primary))' },
+  { name: 'Kuliner', value: 20, color: 'hsl(80, 70%, 50%)' },
+  { name: 'Jasa & Akomodasi', value: 9, color: 'hsl(140, 50%, 60%)' },
+  { name: 'Agrowisata', value: 7, color: 'hsl(40, 60%, 60%)' },
 ];
 
 // Data destinasi wisata yang diperbarui dengan informasi lengkap

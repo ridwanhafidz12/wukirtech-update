@@ -9,13 +9,14 @@ const initialVisitorData = [
   { name: '2022', pengunjung: 734.86 },
   { name: '2023', pengunjung: 839.67 },
   { name: '2024', pengunjung: 1021.08 },
+  { name: '2025', pengunjung: 1215.42 },
 ];
 
 const umkmData = [
-    { name: 'Kerajinan', value: 40, color: 'hsl(var(--primary))' },
-    { name: 'Kuliner', value: 33, color: 'hsl(80, 70%, 50%)' },
-    { name: 'Jasa & Akomodasi', value: 15, color: 'hsl(140, 50%, 60%)' },
-    { name: 'Agrowisata', value: 12, color: 'hsl(40, 60%, 60%)' },
+  { name: 'Kerajinan', value: 24, color: 'hsl(var(--primary))' },
+  { name: 'Kuliner', value: 20, color: 'hsl(80, 70%, 50%)' },
+  { name: 'Jasa & Akomodasi', value: 9, color: 'hsl(140, 50%, 60%)' },
+  { name: 'Agrowisata', value: 7, color: 'hsl(40, 60%, 60%)' },
 ];
 const totalUmkm = umkmData.reduce((sum, item) => sum + item.value, 0);
 
@@ -79,7 +80,7 @@ const VisitorChart = () => {
         <Users className="w-5 h-5 mr-2 text-primary" />
         Kunjungan Wisatawan Tahunan
       </h3>
-      <p className="text-sm text-muted-foreground mb-6">Data kunjungan wisatawan domestik dari tahun 2020-2024</p>
+      <p className="text-sm text-muted-foreground mb-6">Data kunjungan wisatawan domestik dari tahun 2020-2025</p>
       <div className="h-64">
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart data={data} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
@@ -127,7 +128,7 @@ const renderActiveShape = (props) => {
   return (
     <g>
       <text x={cx} y={cy} dy={-10} textAnchor="middle" fill="hsl(var(--foreground))" className="text-2xl font-bold">
-        {`${totalUmkm}+`}
+        {`${totalUmkm}`}
       </text>
       <text x={cx} y={cy} dy={15} textAnchor="middle" fill="hsl(var(--muted-foreground))" className="text-sm">
         Total UMKM
