@@ -33,11 +33,18 @@ import {
   Info,
   CheckCircle2,
   MapPin,
+  Cloud,
+  CloudOff,
+  RefreshCw,
+  Copy,
+  Server,
+  Wifi,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/components/ui/use-toast';
 import { useData } from '@/context/DataContext';
+import { getSupabaseConfig } from '@/services/supabaseClient';
 import Panorama360Viewer from '@/components/vr/Panorama360Viewer';
 import {
   downloadStandaloneVrHtml,
@@ -90,6 +97,17 @@ const AdminPage = () => {
     resetToDefaults,
     exportDataJson,
     importDataJson,
+    // Cloud Sync
+    cloudStatus,
+    cloudMessage,
+    lastCloudSync,
+    isCloudConfigured,
+    syncAllToCloudNow,
+    pullFromCloudNow,
+    configureCloudConnection,
+    disconnectCloud,
+    uploadMedia,
+    getSetupSqlScript,
   } = useData();
 
   const { toast } = useToast();
@@ -97,11 +115,11 @@ const AdminPage = () => {
 
   const [activeTab, setActiveTab] = useState(
     () => searchParams.get('tab') || 'overview'
-  ); // overview | products | categories | events | vrtour | backup
+  ); // overview | products | categories | events | vrtour | backup | cloud
 
   useEffect(() => {
     const tabParam = searchParams.get('tab');
-    if (tabParam && ['overview', 'products', 'categories', 'events', 'vrtour', 'backup'].includes(tabParam)) {
+    if (tabParam && ['overview', 'products', 'categories', 'events', 'vrtour', 'backup', 'cloud'].includes(tabParam)) {
       setActiveTab(tabParam);
     }
   }, [searchParams]);
@@ -109,6 +127,136 @@ const AdminPage = () => {
   const handleSelectTab = (tabName) => {
     setActiveTab(tabName);
     setSearchParams(tabName === 'overview' ? {} : { tab: tabName }, { replace: true });
+  };
+
+  // Cloud Sync Form State
+  const [cloudUrlInput, setCloudUrlInput] = useState('');
+  const [cloudKeyInput, setCloudKeyInput] = useState('');
+  const [isCloudConnecting, setIsCloudConnecting] = useState(false);
+  const [isSyncingAll, setIsSyncingAll] = useState(false);
+  const [isPullingCloud, setIsPullingCloud] = useState(false);
+  const [copiedSql, setCopiedSql] = useState(false);
+
+  useEffect(() => {
+    const conf = getSupabaseConfig();
+    if (conf.url) setCloudUrlInput(conf.url);
+    if (conf.anonKey) setCloudKeyInput(conf.anonKey);
+  }, [isCloudConfigured]);
+
+  const handleSaveCloudConfig = async (e) => {
+    if (e && e.preventDefault) e.preventDefault();
+    if (!cloudUrlInput.trim() || !cloudKeyInput.trim()) {
+      toast({
+        title: 'Formulir Belum Lengkap',
+        description: 'Harap isi Project URL dan Anon Public Key dari Supabase.',
+        variant: 'destructive',
+      });
+      return;
+    }
+    setIsCloudConnecting(true);
+    try {
+      const res = await configureCloudConnection({
+        url: cloudUrlInput.trim(),
+        anonKey: cloudKeyInput.trim(),
+      });
+      if (res.ok) {
+        toast({
+          title: 'Koneksi Berhasil!',
+          description: 'Aplikasi kini terhubung ke Supabase. Data Anda siap disinkronkan ke seluruh perangkat.',
+        });
+      } else {
+        toast({
+          title: 'Koneksi Bermasalah',
+          description: res.message,
+          variant: 'destructive',
+        });
+      }
+    } catch (err) {
+      toast({
+        title: 'Gagal Menghubungkan',
+        description: err.message,
+        variant: 'destructive',
+      });
+    } finally {
+      setIsCloudConnecting(false);
+    }
+  };
+
+  const handleDisconnectCloud = () => {
+    if (window.confirm('Yakin ingin memutuskan koneksi Supabase? Aplikasi akan beralih ke penyimpanan lokal browser ini.')) {
+      disconnectCloud();
+      setCloudUrlInput('');
+      setCloudKeyInput('');
+      toast({
+        title: 'Koneksi Diputus',
+        description: 'Aplikasi sekarang menggunakan mode penyimpanan lokal.',
+      });
+    }
+  };
+
+  const handleSyncAllToCloud = async () => {
+    setIsSyncingAll(true);
+    try {
+      const res = await syncAllToCloudNow();
+      if (res.ok) {
+        toast({
+          title: 'Sinkronisasi Berhasil! 🚀',
+          description: 'Seluruh data VR Tour, 60 UMKM, dan agenda kini tersimpan di Cloud Supabase dan langsung dapat diakses oleh HP teman Anda!',
+        });
+      } else {
+        toast({
+          title: 'Gagal Menyinkronkan',
+          description: res.message,
+          variant: 'destructive',
+        });
+      }
+    } catch (err) {
+      toast({
+        title: 'Error Sinkronisasi',
+        description: err.message,
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSyncingAll(false);
+    }
+  };
+
+  const handlePullFromCloud = async () => {
+    setIsPullingCloud(true);
+    try {
+      const res = await pullFromCloudNow();
+      if (res.ok) {
+        toast({
+          title: 'Data Berhasil Diperbarui',
+          description: 'Data di browser ini telah diperbarui dengan data terbaru dari Cloud Supabase.',
+        });
+      } else {
+        toast({
+          title: 'Gagal Memperbarui',
+          description: res.message,
+          variant: 'destructive',
+        });
+      }
+    } catch (err) {
+      toast({
+        title: 'Error Tarik Data',
+        description: err.message,
+        variant: 'destructive',
+      });
+    } finally {
+      setIsPullingCloud(false);
+    }
+  };
+
+  const handleCopySql = () => {
+    const sql = getSetupSqlScript();
+    navigator.clipboard.writeText(sql);
+    setCopiedSql(true);
+    toast({
+      title: 'Skrip SQL Tersalin!',
+      description: 'Tempelkan skrip ini ke Supabase Dashboard -> SQL Editor lalu klik Run.',
+    });
+    setTimeout(() => setCopiedSql(false), 3000);
   };
 
   // Product Filter & Form State
@@ -560,7 +708,24 @@ const AdminPage = () => {
     if (!file) return;
     try {
       const result = await validateAndCompressPanoramaFile(file);
-      setVrSceneForm((prev) => ({ ...prev, image: result.dataUrl }));
+
+      let finalImageUrl = result.dataUrl;
+      let storageUploaded = false;
+
+      // Jika Supabase aktif, unggah foto asli ke Supabase Storage CDN agar cepat diakses di semua HP
+      if (isCloudConfigured) {
+        toast({
+          title: 'Mengunggah ke Cloud Storage...',
+          description: 'Foto 360° sedang dikirim ke Supabase agar dapat diakses semua perangkat secara cepat.',
+        });
+        const uploadRes = await uploadMedia(file, 'vr-scenes');
+        if (uploadRes && uploadRes.ok && uploadRes.publicUrl) {
+          finalImageUrl = uploadRes.publicUrl;
+          storageUploaded = true;
+        }
+      }
+
+      setVrSceneForm((prev) => ({ ...prev, image: finalImageUrl }));
       setVrPhotoMeta({
         ok: true,
         width: result.width,
@@ -570,14 +735,18 @@ const AdminPage = () => {
         compressedSizeKb: result.compressedSizeKb,
         originalSizeKb: result.originalSizeKb,
       });
+
       toast({
-        title: result.isEquirectangular
+        title: storageUploaded
+          ? 'Foto 360° Terunggah ke Cloud CDN 🌐'
+          : result.isEquirectangular
           ? 'Foto 360° Valid (Rasio 2:1)'
           : 'Foto Dimuat (Periksa Rasio 2:1)',
-        description:
-          result.warning ||
-          `${result.width}x${result.height}px (${result.originalSizeKb}KB -> ${result.compressedSizeKb}KB).`,
-        variant: result.isEquirectangular ? 'default' : 'destructive',
+        description: storageUploaded
+          ? 'Foto 360° berhasil diunggah ke CDN Supabase dan langsung dapat dilihat di HP teman!'
+          : result.warning ||
+            `${result.width}x${result.height}px (${result.originalSizeKb}KB -> ${result.compressedSizeKb}KB).`,
+        variant: result.isEquirectangular || storageUploaded ? 'default' : 'destructive',
       });
     } catch (err) {
       toast({
@@ -940,6 +1109,30 @@ const AdminPage = () => {
             >
               <Database className="w-4 h-4" />
               <span>Cadangan & Reset</span>
+            </button>
+
+            <button
+              onClick={() => handleSelectTab('cloud')}
+              className={`px-4 py-2.5 rounded-xl text-xs md:text-sm font-semibold transition-all flex items-center gap-2 whitespace-nowrap ${
+                activeTab === 'cloud'
+                  ? 'bg-primary text-primary-foreground shadow-md shadow-primary/20'
+                  : 'bg-card/70 hover:bg-secondary text-muted-foreground'
+              }`}
+            >
+              <Cloud className="w-4 h-4" />
+              <span>Sinkronisasi Cloud</span>
+              <span
+                className={`w-2 h-2 rounded-full ${
+                  isCloudConfigured && cloudStatus === 'connected'
+                    ? 'bg-emerald-400 animate-pulse'
+                    : 'bg-amber-400'
+                }`}
+                title={
+                  isCloudConfigured && cloudStatus === 'connected'
+                    ? 'Online & Sinkron'
+                    : 'Mode Lokal'
+                }
+              />
             </button>
           </div>
 
@@ -1855,6 +2048,323 @@ const AdminPage = () => {
                 <Button onClick={handleResetData} variant="destructive" size="sm" className="text-xs font-semibold">
                   <RotateCcw className="w-3.5 h-3.5 mr-1.5" /> Reset Seluruh Data Sekarang
                 </Button>
+              </div>
+            </motion.div>
+          )}
+
+          {/* ================= TAB 6: SINKRONISASI CLOUD (MULTI-DEVICE) ================= */}
+          {activeTab === 'cloud' && (
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-8 max-w-4xl mx-auto">
+              {/* Status Banner */}
+              <div
+                className={`p-6 rounded-2xl border transition-all ${
+                  isCloudConfigured && cloudStatus === 'connected'
+                    ? 'bg-emerald-500/10 border-emerald-500/30'
+                    : 'bg-amber-500/10 border-amber-500/30'
+                }`}
+              >
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                  <div className="flex items-center gap-3">
+                    <div
+                      className={`p-3 rounded-xl ${
+                        isCloudConfigured && cloudStatus === 'connected'
+                          ? 'bg-emerald-500/20 text-emerald-400'
+                          : 'bg-amber-500/20 text-amber-400'
+                      }`}
+                    >
+                      {isCloudConfigured && cloudStatus === 'connected' ? (
+                        <Wifi className="w-6 h-6 animate-pulse" />
+                      ) : (
+                        <CloudOff className="w-6 h-6" />
+                      )}
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h3 className="text-base font-bold text-foreground">
+                          {isCloudConfigured && cloudStatus === 'connected'
+                            ? 'Online • Terhubung ke Database Cloud (Supabase)'
+                            : 'Mode Penyimpanan Lokal (Belum Tersinkron ke Internet)'}
+                        </h3>
+                        <span
+                          className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                            isCloudConfigured && cloudStatus === 'connected'
+                              ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                              : 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
+                          }`}
+                        >
+                          {isCloudConfigured && cloudStatus === 'connected' ? 'Multi-Device Aktif' : 'Device Ini Saja'}
+                        </span>
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-1 max-w-xl">
+                        {isCloudConfigured && cloudStatus === 'connected'
+                          ? 'Perubahan produk, agenda, dan VR Tour yang Anda edit di laptop ini otomatis terupdate ke HP teman, keluarga, maupun seluruh pengunjung website melalui internet secara real-time.'
+                          : 'Saat ini data baru tersimpan di browser laptop ini (localStorage). Agar HP teman dapat melihat VR Tour & data terbaru, hubungkan ke proyek database gratis Supabase di bawah.'}
+                      </p>
+                    </div>
+                  </div>
+
+                  {lastCloudSync && (
+                    <div className="text-left sm:text-right flex-shrink-0">
+                      <span className="text-[10px] uppercase font-semibold text-muted-foreground block">
+                        Sinkronisasi Terakhir
+                      </span>
+                      <span className="text-xs font-mono font-bold text-foreground">
+                        {lastCloudSync}
+                      </span>
+                    </div>
+                  )}
+                </div>
+
+                {cloudMessage && (
+                  <div className="mt-4 pt-3 border-t border-border/20 text-xs text-muted-foreground flex items-center gap-1.5">
+                    <Info className="w-3.5 h-3.5 text-primary flex-shrink-0" />
+                    <span>{cloudMessage}</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Card 1: Aksi Cepat Sinkronisasi Multi-Device */}
+              <div className="bg-card/80 border border-border/30 rounded-2xl p-6 shadow-sm">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="p-2.5 rounded-xl bg-primary/10 text-primary">
+                    <RefreshCw className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-bold text-foreground">
+                      Sinkronisasi Data Multi-Device
+                    </h3>
+                    <p className="text-xs text-muted-foreground">
+                      Kirim data yang telah Anda sesuaikan di laptop ini ke Cloud agar langsung tampil di HP teman.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="p-4 rounded-xl border border-border/30 bg-secondary/20 flex flex-col justify-between">
+                    <div>
+                      <h4 className="text-sm font-bold text-foreground mb-1">
+                        🚀 Kirim Data Laptop ke Cloud (Sync Up)
+                      </h4>
+                      <p className="text-xs text-muted-foreground mb-4">
+                        Mengunggah semua scene VR Tour ({vrScenes.length} titik), {products.length} produk UMKM, dan agenda acara dari laptop ini ke Supabase.
+                      </p>
+                    </div>
+                    <Button
+                      onClick={handleSyncAllToCloud}
+                      disabled={isSyncingAll || !isCloudConfigured}
+                      className="w-full bg-primary text-primary-foreground font-semibold text-xs"
+                    >
+                      {isSyncingAll ? (
+                        <>
+                          <RefreshCw className="w-3.5 h-3.5 mr-1.5 animate-spin" />
+                          Mengunggah ke Cloud...
+                        </>
+                      ) : (
+                        <>
+                          <Upload className="w-3.5 h-3.5 mr-1.5" />
+                          Kirim Data Laptop ke Cloud Sekarang
+                        </>
+                      )}
+                    </Button>
+                  </div>
+
+                  <div className="p-4 rounded-xl border border-border/30 bg-secondary/20 flex flex-col justify-between">
+                    <div>
+                      <h4 className="text-sm font-bold text-foreground mb-1">
+                        📥 Tarik Data dari Cloud (Sync Down)
+                      </h4>
+                      <p className="text-xs text-muted-foreground mb-4">
+                        Memperbarui browser ini dengan data terbaru yang tersimpan di Cloud Supabase.
+                      </p>
+                    </div>
+                    <Button
+                      onClick={handlePullFromCloud}
+                      disabled={isPullingCloud || !isCloudConfigured}
+                      variant="outline"
+                      className="w-full text-xs font-semibold"
+                    >
+                      {isPullingCloud ? (
+                        <>
+                          <RefreshCw className="w-3.5 h-3.5 mr-1.5 animate-spin" />
+                          Menarik Data...
+                        </>
+                      ) : (
+                        <>
+                          <Download className="w-3.5 h-3.5 mr-1.5" />
+                          Tarik Data Terbaru dari Cloud
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Card 2: Pengaturan Database Supabase */}
+              <div className="bg-card/80 border border-border/30 rounded-2xl p-6 shadow-sm">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-400">
+                    <Server className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-bold text-foreground">
+                      Pengaturan Akun Supabase
+                    </h3>
+                    <p className="text-xs text-muted-foreground">
+                      Kredensial disimpan aman di konfigurasi proyek Anda agar seluruh pengunjung terhubung ke database yang sama.
+                    </p>
+                  </div>
+                </div>
+
+                <form onSubmit={handleSaveCloudConfig} className="space-y-4">
+                  <div>
+                    <label className="text-xs font-semibold text-foreground mb-1 block">
+                      Supabase Project URL
+                    </label>
+                    <Input
+                      type="url"
+                      placeholder="https://your-project-id.supabase.co"
+                      value={cloudUrlInput}
+                      onChange={(e) => setCloudUrlInput(e.target.value)}
+                      className="text-xs font-mono"
+                    />
+                    <p className="text-[11px] text-muted-foreground mt-1">
+                      Didapatkan dari: Supabase Dashboard &gt; Project Settings &gt; API &gt; Project URL
+                    </p>
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-semibold text-foreground mb-1 block">
+                      Supabase Anon Public Key (API Key)
+                    </label>
+                    <Input
+                      type="password"
+                      placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                      value={cloudKeyInput}
+                      onChange={(e) => setCloudKeyInput(e.target.value)}
+                      className="text-xs font-mono"
+                    />
+                    <p className="text-[11px] text-muted-foreground mt-1">
+                      Didapatkan dari: Supabase Dashboard &gt; Project Settings &gt; API &gt; Project API Keys (anon public)
+                    </p>
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-3 pt-2">
+                    <Button
+                      type="submit"
+                      disabled={isCloudConnecting}
+                      className="bg-primary text-primary-foreground font-semibold text-xs"
+                    >
+                      {isCloudConnecting ? (
+                        <>
+                          <RefreshCw className="w-3.5 h-3.5 mr-1.5 animate-spin" />
+                          Menghubungkan...
+                        </>
+                      ) : (
+                        <>
+                          <Check className="w-3.5 h-3.5 mr-1.5" />
+                          Tes Koneksi &amp; Simpan
+                        </>
+                      )}
+                    </Button>
+
+                    {isCloudConfigured && (
+                      <Button
+                        type="button"
+                        onClick={handleDisconnectCloud}
+                        variant="destructive"
+                        className="text-xs font-semibold"
+                      >
+                        <CloudOff className="w-3.5 h-3.5 mr-1.5" />
+                        Putuskan Koneksi
+                      </Button>
+                    )}
+                  </div>
+                </form>
+              </div>
+
+              {/* Card 3: Panduan 1-Menit Setup Supabase & Skrip SQL */}
+              <div className="bg-card/80 border border-border/30 rounded-2xl p-6 shadow-sm">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-4">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2.5 rounded-xl bg-purple-500/10 text-purple-400">
+                      <Database className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h3 className="text-base font-bold text-foreground">
+                        Panduan Setup Supabase (Gratis &amp; 1-Menit Selesai)
+                      </h3>
+                      <p className="text-xs text-muted-foreground">
+                        Belum punya database? Ikuti 3 langkah cepat ini tanpa biaya apa pun.
+                      </p>
+                    </div>
+                  </div>
+
+                  <Button
+                    type="button"
+                    onClick={handleCopySql}
+                    variant="outline"
+                    className="text-xs font-semibold flex-shrink-0"
+                  >
+                    {copiedSql ? (
+                      <>
+                        <Check className="w-3.5 h-3.5 mr-1.5 text-emerald-400" />
+                        Skrip SQL Tersalin!
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="w-3.5 h-3.5 mr-1.5" />
+                        Salin Skrip SQL Otomatis
+                      </>
+                    )}
+                  </Button>
+                </div>
+
+                <div className="space-y-3 text-xs text-muted-foreground">
+                  <div className="flex items-start gap-3 p-3 rounded-xl bg-secondary/30">
+                    <span className="w-5 h-5 rounded-full bg-primary/20 text-primary flex items-center justify-center font-bold text-[11px] flex-shrink-0">
+                      1
+                    </span>
+                    <div>
+                      <strong className="text-foreground">Buat Proyek Baru di Supabase</strong>
+                      <p className="mt-0.5">
+                        Buka{' '}
+                        <a
+                          href="https://supabase.com"
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-primary underline font-medium"
+                        >
+                          supabase.com
+                        </a>
+                        , klik <em>Start your project</em> (Gratis). Beri nama (misal: <code>wukirtech-db</code>) dan pilih Region <strong>Singapore</strong> agar koneksi dari Indonesia sangat cepat.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start gap-3 p-3 rounded-xl bg-secondary/30">
+                    <span className="w-5 h-5 rounded-full bg-primary/20 text-primary flex items-center justify-center font-bold text-[11px] flex-shrink-0">
+                      2
+                    </span>
+                    <div>
+                      <strong className="text-foreground">Jalankan Skrip SQL</strong>
+                      <p className="mt-0.5">
+                        Buka menu <strong>SQL Editor</strong> di dashboard Supabase Anda, klik <em>New query</em>, tempel skrip dari tombol <strong>"Salin Skrip SQL Otomatis"</strong> di atas, lalu klik <strong>Run</strong>. (Tabel <code>wukirtech_app_data</code> dan Storage <code>wukirtech-media</code> akan dibuat otomatis).
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start gap-3 p-3 rounded-xl bg-secondary/30">
+                    <span className="w-5 h-5 rounded-full bg-primary/20 text-primary flex items-center justify-center font-bold text-[11px] flex-shrink-0">
+                      3
+                    </span>
+                    <div>
+                      <strong className="text-foreground">Salin URL &amp; Key ke Form di Atas</strong>
+                      <p className="mt-0.5">
+                        Masuk ke <strong>Project Settings &gt; API</strong>, salin <em>Project URL</em> dan <em>Project API Keys (anon public)</em>, lalu tempel pada formulir di atas dan klik <strong>Tes Koneksi &amp; Simpan</strong>. Setelah itu klik tombol <strong>"Kirim Data Laptop ke Cloud Sekarang"</strong>.
+                      </p>
+                    </div>
+                  </div>
+                </div>
               </div>
             </motion.div>
           )}

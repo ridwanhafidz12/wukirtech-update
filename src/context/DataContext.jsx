@@ -1,5 +1,17 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { defaultCategories, defaultProducts, defaultEvents, defaultNews, defaultVrTour } from '@/data/defaultData';
+import {
+  getSupabaseConfig,
+  saveSupabaseConfig,
+  clearSupabaseConfig,
+  testSupabaseConnection,
+  fetchAppDataFromCloud,
+  saveCollectionToCloud,
+  syncAllToCloud,
+  subscribeToAppDataChanges,
+  uploadMediaToCloud,
+  getSetupSqlScript,
+} from '@/services/supabaseClient';
 
 const DataContext = createContext(null);
 
@@ -134,14 +146,101 @@ export const DataProvider = ({ children }) => {
     }
   });
 
-  // Sync to localStorage
+  // Cloud Sync State
+  const [cloudStatus, setCloudStatus] = useState('idle'); // 'idle' | 'checking' | 'connected' | 'syncing' | 'error' | 'unconfigured'
+  const [cloudMessage, setCloudMessage] = useState('');
+  const [lastCloudSync, setLastCloudSync] = useState(null);
+  const [isCloudConfigured, setIsCloudConfigured] = useState(() => getSupabaseConfig().isConfigured);
+  const isInitializedRef = useRef(false);
+  const ignoreNextSyncRef = useRef({});
+
+  // Inisialisasi koneksi Cloud & listener Realtime
+  useEffect(() => {
+    let unsubscribe = null;
+    const config = getSupabaseConfig();
+    setIsCloudConfigured(config.isConfigured);
+
+    if (!config.isConfigured) {
+      setCloudStatus('unconfigured');
+      setCloudMessage('Penyimpanan lokal aktif. Hubungkan Supabase agar data langsung terupdate ke HP teman dan seluruh internet.');
+      isInitializedRef.current = true;
+      return;
+    }
+
+    setCloudStatus('checking');
+    fetchAppDataFromCloud().then((res) => {
+      if (res.ok && res.data) {
+        if (Array.isArray(res.data.products) && res.data.products.length > 0) {
+          ignoreNextSyncRef.current.products = true;
+          setProducts(res.data.products);
+        }
+        if (Array.isArray(res.data.categories) && res.data.categories.length > 0) {
+          ignoreNextSyncRef.current.categories = true;
+          setCategories(res.data.categories);
+        }
+        if (Array.isArray(res.data.events) && res.data.events.length > 0) {
+          ignoreNextSyncRef.current.events = true;
+          setEvents(res.data.events);
+        }
+        if (Array.isArray(res.data.news) && res.data.news.length > 0) {
+          ignoreNextSyncRef.current.news = true;
+          setNews(res.data.news);
+        }
+        if (res.data.vrTour && Array.isArray(res.data.vrTour.scenes) && res.data.vrTour.scenes.length > 0) {
+          ignoreNextSyncRef.current.vr_tour = true;
+          setVrTour(res.data.vrTour);
+        }
+        setCloudStatus('connected');
+        setCloudMessage('Terhubung ke Supabase Cloud. Data tersinkron online ke seluruh perangkat.');
+        setLastCloudSync(new Date().toLocaleTimeString('id-ID'));
+      } else {
+        setCloudStatus(res.error ? 'error' : 'unconfigured');
+        setCloudMessage(res.error || 'Tabel database belum dibuat di Supabase.');
+      }
+      isInitializedRef.current = true;
+    });
+
+    // Realtime channel: ketika admin mengubah data di laptop, HP teman langsung terupdate live
+    unsubscribe = subscribeToAppDataChanges((key, data) => {
+      if (key === 'products' && Array.isArray(data)) {
+        ignoreNextSyncRef.current.products = true;
+        setProducts(data);
+      } else if (key === 'categories' && Array.isArray(data)) {
+        ignoreNextSyncRef.current.categories = true;
+        setCategories(data);
+      } else if (key === 'events' && Array.isArray(data)) {
+        ignoreNextSyncRef.current.events = true;
+        setEvents(data);
+      } else if (key === 'news' && Array.isArray(data)) {
+        ignoreNextSyncRef.current.news = true;
+        setNews(data);
+      } else if (key === 'vr_tour' && data && Array.isArray(data.scenes)) {
+        ignoreNextSyncRef.current.vr_tour = true;
+        setVrTour(data);
+      }
+      setLastCloudSync(new Date().toLocaleTimeString('id-ID'));
+    });
+
+    return () => {
+      if (unsubscribe) unsubscribe();
+    };
+  }, [isCloudConfigured]);
+
+  // Sync to localStorage & Auto-sync ke Cloud
   useEffect(() => {
     try {
       localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(products));
     } catch (e) {
       console.error('Error saving products:', e);
     }
-  }, [products]);
+    if (isInitializedRef.current && isCloudConfigured) {
+      if (ignoreNextSyncRef.current.products) {
+        ignoreNextSyncRef.current.products = false;
+      } else {
+        saveCollectionToCloud('products', products);
+      }
+    }
+  }, [products, isCloudConfigured]);
 
   useEffect(() => {
     try {
@@ -149,7 +248,14 @@ export const DataProvider = ({ children }) => {
     } catch (e) {
       console.error('Error saving categories:', e);
     }
-  }, [categories]);
+    if (isInitializedRef.current && isCloudConfigured) {
+      if (ignoreNextSyncRef.current.categories) {
+        ignoreNextSyncRef.current.categories = false;
+      } else {
+        saveCollectionToCloud('categories', categories);
+      }
+    }
+  }, [categories, isCloudConfigured]);
 
   useEffect(() => {
     try {
@@ -157,7 +263,14 @@ export const DataProvider = ({ children }) => {
     } catch (e) {
       console.error('Error saving events:', e);
     }
-  }, [events]);
+    if (isInitializedRef.current && isCloudConfigured) {
+      if (ignoreNextSyncRef.current.events) {
+        ignoreNextSyncRef.current.events = false;
+      } else {
+        saveCollectionToCloud('events', events);
+      }
+    }
+  }, [events, isCloudConfigured]);
 
   useEffect(() => {
     try {
@@ -165,7 +278,14 @@ export const DataProvider = ({ children }) => {
     } catch (e) {
       console.error('Error saving vrTour (mungkin melebihi kuota localStorage):', e);
     }
-  }, [vrTour]);
+    if (isInitializedRef.current && isCloudConfigured) {
+      if (ignoreNextSyncRef.current.vr_tour) {
+        ignoreNextSyncRef.current.vr_tour = false;
+      } else {
+        saveCollectionToCloud('vr_tour', vrTour);
+      }
+    }
+  }, [vrTour, isCloudConfigured]);
 
   // Product CRUD
   const addProduct = (productData) => {
@@ -445,12 +565,104 @@ export const DataProvider = ({ children }) => {
     }
   };
 
+  // Cloud Sync Actions
+  const syncAllToCloudNow = async () => {
+    setCloudStatus('syncing');
+    setCloudMessage('Sedang mengunggah semua data lokal ke Supabase Cloud...');
+    const res = await syncAllToCloud({ products, categories, events, news, vrTour });
+    if (res.ok) {
+      setCloudStatus('connected');
+      setCloudMessage(res.message);
+      setLastCloudSync(new Date().toLocaleTimeString('id-ID'));
+    } else {
+      setCloudStatus('error');
+      setCloudMessage(res.message);
+    }
+    return res;
+  };
+
+  const pullFromCloudNow = async () => {
+    setCloudStatus('syncing');
+    setCloudMessage('Sedang menarik data terbaru dari Supabase Cloud...');
+    const res = await fetchAppDataFromCloud();
+    if (res.ok && res.data) {
+      if (Array.isArray(res.data.products) && res.data.products.length > 0) {
+        ignoreNextSyncRef.current.products = true;
+        setProducts(res.data.products);
+      }
+      if (Array.isArray(res.data.categories) && res.data.categories.length > 0) {
+        ignoreNextSyncRef.current.categories = true;
+        setCategories(res.data.categories);
+      }
+      if (Array.isArray(res.data.events) && res.data.events.length > 0) {
+        ignoreNextSyncRef.current.events = true;
+        setEvents(res.data.events);
+      }
+      if (Array.isArray(res.data.news) && res.data.news.length > 0) {
+        ignoreNextSyncRef.current.news = true;
+        setNews(res.data.news);
+      }
+      if (res.data.vrTour && Array.isArray(res.data.vrTour.scenes) && res.data.vrTour.scenes.length > 0) {
+        ignoreNextSyncRef.current.vr_tour = true;
+        setVrTour(res.data.vrTour);
+      }
+      setCloudStatus('connected');
+      setCloudMessage('Data berhasil diperbarui dari Cloud.');
+      setLastCloudSync(new Date().toLocaleTimeString('id-ID'));
+      return { ok: true, message: 'Data berhasil disinkronkan dari Cloud.' };
+    }
+    setCloudStatus('error');
+    setCloudMessage(res.error || 'Gagal menarik data dari Cloud.');
+    return { ok: false, message: res.error };
+  };
+
+  const configureCloudConnection = async ({ url, anonKey }) => {
+    setCloudStatus('checking');
+    setCloudMessage('Menghubungkan ke Supabase...');
+    saveSupabaseConfig({ url, anonKey });
+    const isConf = getSupabaseConfig().isConfigured;
+    setIsCloudConfigured(isConf);
+    const test = await testSupabaseConnection();
+    if (test.ok) {
+      setCloudStatus('connected');
+      setCloudMessage(test.message);
+      await pullFromCloudNow();
+    } else {
+      setCloudStatus(test.tableExists === false ? 'unconfigured' : 'error');
+      setCloudMessage(test.message);
+    }
+    return test;
+  };
+
+  const disconnectCloud = () => {
+    clearSupabaseConfig();
+    setIsCloudConfigured(false);
+    setCloudStatus('unconfigured');
+    setCloudMessage('Koneksi Supabase diputus. Menggunakan penyimpanan lokal.');
+  };
+
+  const uploadMedia = async (file, folder = 'vr-scenes') => {
+    return await uploadMediaToCloud(file, folder);
+  };
+
   const value = {
     products,
     categories,
     events,
     news,
     vrTour,
+    // Cloud Sync
+    cloudStatus,
+    cloudMessage,
+    lastCloudSync,
+    isCloudConfigured,
+    syncAllToCloudNow,
+    pullFromCloudNow,
+    configureCloudConnection,
+    disconnectCloud,
+    uploadMedia,
+    getSetupSqlScript,
+    // CRUD
     getProductById,
     addProduct,
     updateProduct,
