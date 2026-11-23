@@ -20,7 +20,7 @@ import { useData } from '@/context/DataContext';
 import { ProductCard, PaymentModal } from '@/components/common/ProductCard';
 
 const ProdukPage = () => {
-  const { products, categories } = useData();
+  const { products, categories, isLoading } = useData();
   const [selectedCategory, setSelectedCategory] = useState('Semua');
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState('default');
@@ -192,7 +192,12 @@ const ProdukPage = () => {
 
           {/* Products Grid */}
           <div className="max-w-6xl mx-auto">
-            {filteredProducts.length > 0 ? (
+            {isLoading && products.length === 0 ? (
+              <div className="text-center py-20 flex flex-col items-center justify-center">
+                <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mb-3" />
+                <p className="text-sm text-muted-foreground">Memuat katalog produk UMKM...</p>
+              </div>
+            ) : filteredProducts.length > 0 ? (
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}

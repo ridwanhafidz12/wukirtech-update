@@ -38,7 +38,7 @@ import { Dialog, DialogContent } from '@/components/ui/dialog';
 const ProductDetailPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { products, getProductById } = useData();
+  const { products, getProductById, isLoading } = useData();
   const { toast } = useToast();
 
   const product = getProductById ? getProductById(id) : products.find((p) => p.id === id || String(p.id) === String(id));
@@ -58,6 +58,14 @@ const ProductDetailPage = () => {
   }, [id]);
 
   if (!product) {
+    if (isLoading) {
+      return (
+        <div className="min-h-screen bg-background pt-28 pb-16 flex flex-col items-center justify-center px-4 text-center">
+          <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mb-3" />
+          <p className="text-sm text-muted-foreground">Memuat detail produk...</p>
+        </div>
+      );
+    }
     return (
       <div className="min-h-screen bg-background pt-28 pb-16 flex items-center justify-center px-4">
         <Helmet>

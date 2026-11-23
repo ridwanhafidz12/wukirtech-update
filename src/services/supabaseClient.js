@@ -5,12 +5,15 @@ export const STORAGE_BUCKET = 'wukirtech-media';
 let cachedClient = null;
 let currentClientKey = null;
 
+const DEFAULT_SUPABASE_URL = 'https://phmrlopuueudsoukdsah.supabase.co';
+const DEFAULT_SUPABASE_ANON_KEY = 'sb_publishable_3Wt0_jLcBuQpS9WRsYt4Kg_IngLHTRh';
+
 /**
- * Mendapatkan konfigurasi Supabase dari environment variable (.env)
+ * Mendapatkan konfigurasi Supabase dari environment variable (.env) atau default publik
  */
 export function getSupabaseConfig() {
-  const url = (import.meta.env.VITE_SUPABASE_URL || '').trim();
-  const anonKey = (import.meta.env.VITE_SUPABASE_ANON_KEY || '').trim();
+  const url = (import.meta.env.VITE_SUPABASE_URL || DEFAULT_SUPABASE_URL).trim();
+  const anonKey = (import.meta.env.VITE_SUPABASE_ANON_KEY || DEFAULT_SUPABASE_ANON_KEY).trim();
   const isConfigured = Boolean(url && anonKey && url.startsWith('http'));
 
   return {

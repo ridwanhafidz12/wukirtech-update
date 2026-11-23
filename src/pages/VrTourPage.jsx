@@ -14,7 +14,7 @@ import { useData } from '@/context/DataContext';
 import Panorama360Viewer from '@/components/vr/Panorama360Viewer';
 
 const VrTourPage = () => {
-  const { vrTour } = useData();
+  const { vrTour, isLoading } = useData();
   const { toast } = useToast();
   const [searchParams, setSearchParams] = useSearchParams();
 
@@ -24,6 +24,12 @@ const VrTourPage = () => {
   const [currentSceneId, setCurrentSceneId] = useState(
     () => requestedSceneId || vrTour?.startSceneId || scenes[0]?.id || ''
   );
+
+  React.useEffect(() => {
+    if (!currentSceneId && (requestedSceneId || vrTour?.startSceneId || scenes[0]?.id)) {
+      setCurrentSceneId(requestedSceneId || vrTour?.startSceneId || scenes[0]?.id || '');
+    }
+  }, [requestedSceneId, vrTour?.startSceneId, scenes, currentSceneId]);
 
   const currentScene = useMemo(
     () => scenes.find((s) => s.id === currentSceneId) || scenes[0] || null,
@@ -66,6 +72,14 @@ const VrTourPage = () => {
   }, [currentScene, scenes]);
 
   if (!currentScene) {
+    if (isLoading) {
+      return (
+        <div className="min-h-screen pt-28 pb-16 container mx-auto px-4 flex flex-col items-center justify-center text-center">
+          <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mb-3" />
+          <p className="text-sm text-muted-foreground">Memuat tur virtual 360°...</p>
+        </div>
+      );
+    }
     return (
       <div className="min-h-screen pt-28 pb-16 container mx-auto px-4 text-center">
         <p className="text-sm text-muted-foreground mb-4">Tur virtual belum tersedia saat ini.</p>
